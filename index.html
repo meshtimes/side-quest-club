@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="application-name" content="Side Quest Club">
+<meta name="description" content="Turn daily errands into tiny RPG side quests. Earn XP, level up, become a Functioning Adult.">
+<meta name="mrbd-web-app-capable" content="yes">
+<title>Side Quest Club</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink: #ffa8cf;
+    --pink-hot: #ff7eb8;
+    --ink: #fff4fa;
+    --dim: #c9b6c0;
+    --line: rgba(255, 244, 250, 0.75);
+  }
+  html, body, #app { inline-size: 100%; block-size: 100%; margin: 0; }
+  /* Black = unlit on the additive display, so it reads as see-through. */
+  body {
+    background: #000;
+    color: var(--ink);
+    font-family: "Patrick Hand", "Comic Sans MS", system-ui, sans-serif;
+    overflow: hidden;
+  }
+  #app { display: grid; place-items: center; }
+  .screen {
+    inline-size: min(100%, 600px);
+    block-size: min(100%, 600px);
+    box-sizing: border-box;
+    padding: 40px 44px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 18px;
+    position: relative;
+    text-align: center;
+    animation: pop .28s ease-out;
+  }
+  @keyframes pop { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
+
+  h1 { font-weight: 400; font-size: 46px; margin: 0; letter-spacing: .5px; }
+  h1.underline { text-decoration: underline; text-decoration-color: var(--pink); text-underline-offset: 8px; text-decoration-thickness: 3px; }
+  .big { font-size: 34px; line-height: 1.15; margin: 0; }
+  .sub { font-size: 26px; color: var(--dim); margin: 0; }
+  .xp { color: var(--pink); font-size: 34px; }
+
+  button {
+    font: inherit; color: inherit; background: none; border: 0; cursor: pointer;
+  }
+  .pill {
+    background: var(--pink); color: #2a0d1b;
+    font-size: 30px; padding: 10px 34px; border-radius: 999px;
+  }
+  .pill.ghost { background: none; color: var(--ink); border: 2px solid var(--line); font-size: 24px; padding: 6px 24px; }
+  /* Docs: keep a visible focus ring; browser focus is the source of truth. */
+  :where(button, a, input):focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; }
+  .pill:focus-visible { outline-color: var(--ink); box-shadow: 0 0 18px var(--pink); }
+
+  .box { border: 2px solid var(--line); border-radius: 18px; padding: 14px 18px; }
+
+  /* quest list */
+  .list { display: flex; flex-direction: column; gap: 10px; inline-size: 100%; max-block-size: 380px; overflow-y: auto; padding: 6px; box-sizing: border-box; }
+  .row {
+    display: grid; grid-template-columns: 30px 52px 1fr auto; align-items: center; gap: 12px;
+    text-align: left; font-size: 25px; line-height: 1.1;
+    border: 2px solid var(--line); border-radius: 14px; padding: 8px 14px;
+  }
+  .row.done { opacity: .5; }
+  .row.done .name { text-decoration: line-through; }
+  .row .xpv { color: var(--pink); white-space: nowrap; }
+  .check { inline-size: 24px; block-size: 24px; border: 2px solid var(--ink); border-radius: 5px; display: grid; place-items: center; font-size: 20px; }
+  .row.done .check { background: var(--pink); border-color: var(--pink); color: #2a0d1b; }
+  .row.boss { border-color: var(--pink); }
+  .row:focus-visible { outline-offset: 2px; }
+
+  .bar { inline-size: 100%; max-inline-size: 420px; block-size: 26px; border: 2px solid var(--ink); border-radius: 999px; overflow: hidden; position: relative; }
+  .bar > i { position: absolute; inset: 0 auto 0 0; background: var(--pink); border-radius: 999px; transition: width .9s cubic-bezier(.2,.8,.2,1); }
+  .barlabels { inline-size: 100%; max-inline-size: 420px; display: flex; justify-content: space-between; font-size: 26px; }
+
+  .sprite { image-rendering: pixelated; shape-rendering: crispEdges; }
+  .row-actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+
+  input[type=text] {
+    font: inherit; font-size: 28px; color: var(--ink); background: none;
+    border: 2px solid var(--line); border-radius: 14px; padding: 10px 16px; inline-size: 100%; max-inline-size: 440px; box-sizing: border-box;
+  }
+  input::placeholder { color: var(--dim); }
+
+  /* sparkles */
+  .spark { position: absolute; color: var(--ink); font-size: 30px; animation: twinkle 1.6s ease-in-out infinite; pointer-events: none; }
+  @keyframes twinkle { 0%,100% { opacity: .25; transform: scale(.7) rotate(0); } 50% { opacity: 1; transform: scale(1.1) rotate(20deg); } }
+  .burst { position: absolute; left: 50%; top: 50%; font-size: 26px; color: var(--pink); pointer-events: none; animation: burst 1s ease-out forwards; }
+  @keyframes burst { from { transform: translate(-50%,-50%) scale(.4); opacity: 1; } to { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1); opacity: 0; } }
+  .bounce { animation: bounce 1.4s ease-in-out infinite; }
+  @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+  .stamp { padding: 10px; background: var(--pink); border-radius: 6px; outline: 4px dashed var(--pink); outline-offset: 4px; }
+  .tag { font-size: 22px; color: var(--dim); }
+
+  /* Desktop-only frame so the 600×600 glasses view is obvious outside the glasses. */
+  @media (min-width: 720px) and (min-height: 720px) {
+    body { background: radial-gradient(circle at 50% 40%, #2b2a30, #0d0c10 70%); }
+    .screen { background: #000; border-radius: 48px; box-shadow: 0 0 0 2px #333; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+// ---------- pixel sprites (P pink, H hot pink, W white, D dark accent) ----------
+const SPRITES = {
+  bunny: [
+    "..WW....WW..",
+    ".WPPW..WPPW.",
+    ".WPPW..WPPW.",
+    ".WPPW..WPPW.",
+    "..WWWWWWWW..",
+    ".WWWWWWWWWW.",
+    "WWWDWWWWDWWW",
+    "WPPWWDDWWPPW",
+    "WWWWWWWWWWWW",
+    ".WWWWWWWWWW.",
+    "..WWW..WWW..",
+  ],
+  basket: [
+    "....WWWW....",
+    "...W....W...",
+    "..W......W..",
+    "PPPPPPPPPPPP",
+    "PWPWPWPWPWPP",
+    ".PPPPPPPPPP.",
+    ".PWPWPWPWPP.",
+    "..PPPPPPPP..",
+    "..PPPPPPPP..",
+  ],
+  box: [
+    "..PPPPPPPP..",
+    ".PPPPWWPPPP.",
+    "PPPPPWWPPPPP",
+    "WWWWWWWWWWWW",
+    "PPPPPWWPPPPP",
+    "PPPPPWWPPPPP",
+    "PPPPPWWPPPPP",
+    "PPPPPWWPPPPP",
+    ".PPPPPPPPPP.",
+  ],
+  cup: [
+    "..WWWWWWWW..",
+    ".WWWWWWWWWW.",
+    "..PPPPPPPP..",
+    "..PPPPPPPP..",
+    "..PPWWWWPP..",
+    "..PPWHHWPP..",
+    "...PWWWWP...",
+    "...PPPPPP...",
+    "...PPPPPP...",
+    "....PPPP....",
+  ],
+  shirt: [
+    "...PP..PP...",
+    ".PPPPWWPPPP.",
+    "PPPPPPPPPPPP",
+    "PPPPPPPPPPPP",
+    "..PPPPPPPP..",
+    "..PDPPPPDP..",
+    "..PPPDDPPP..",
+    "..PPPPPPPP..",
+    "..PPPPPPPP..",
+  ],
+  mail: [
+    "WWWWWWWWWWWW",
+    "WPWPPPPPPWPW",
+    "WPPWPPPPWPPW",
+    "WPPPWPPWPPPW",
+    "WPPPPWWPPPPW",
+    "WPPPPPPPPPPW",
+    "WWWWWWWWWWWW",
+  ],
+  dumbbell: [
+    "WW......WW..",
+    "WWW....WWW..",
+    "WWWPPPPWWW..",
+    "WWW....WWW..",
+    "WW......WW..",
+  ],
+  plate: [
+    "...WWWWWW...",
+    ".WWPPPPPPWW.",
+    "WWPPWWWWPPWW",
+    "WPPWWWWWWPPW",
+    "WWPPWWWWPPWW",
+    ".WWPPPPPPWW.",
+    "...WWWWWW...",
+  ],
+  coin: [
+    "...HHHHHH...",
+    "..HPPPPPPH..",
+    ".HPPWPPPPPH.",
+    ".HPWPPPPPPH.",
+    ".HPPPPPPPPH.",
+    "..HPPPPPPH..",
+    "...HHHHHH...",
+  ],
+  star: [
+    ".....PP.....",
+    ".....PP.....",
+    "....PPPP....",
+    "PPPPPPPPPPPP",
+    ".PPPPPPPPPP.",
+    "..PPPPPPPP..",
+    "..PPP..PPP..",
+    ".PP......PP.",
+  ],
+  crown: [
+    "P....P....P.",
+    "PP..PPP..PP.",
+    "PPPPPPPPPPP.",
+    "PWPPPWPPPWP.",
+    "PPPPPPPPPPP.",
+  ],
+};
+// No dark colours: the additive display can't show them (dark ≈ see-through).
+const COLORS = { P: "#ffa8cf", H: "#ff7eb8", W: "#fff4fa", D: "#ff3d97" };
+function sprite(name, px = 5) {
+  const rows = SPRITES[name] || SPRITES.star;
+  const w = Math.max(...rows.map(r => r.length)), h = rows.length;
+  let rects = "";
+  rows.forEach((r, y) => [...r].forEach((c, x) => {
+    if (COLORS[c]) rects += `<rect x="${x}" y="${y}" width="1.02" height="1.02" fill="${COLORS[c]}"/>`;
+  }));
+  return `<svg class="sprite" aria-hidden="true" width="${w * px}" height="${h * px}" viewBox="0 0 ${w} ${h}">${rects}</svg>`;
+}
+
+// ---------- errand → quest translator ----------
+const QUEST_BOOK = [
+  { re: /grocer|food|market|trader|whole ?foods/i, name: "Acquire survival supplies", xp: 30, icon: "basket" },
+  { re: /package|parcel|mail ?room|pick ?up|amazon|ups|fedex/i, name: "Retrieve the mysterious parcel", xp: 20, icon: "box" },
+  { re: /coffee|latte|matcha|caf/i, name: "Obtain caffeine potion", xp: 15, icon: "cup" },
+  { re: /laundry|wash clothes|dry ?clean/i, name: "Defeat the laundry monster", xp: 40, icon: "shirt", boss: true },
+  { re: /e-?mail|inbox|reply|message/i, name: "Confront the inbox demons", xp: 25, icon: "mail" },
+  { re: /gym|workout|run|yoga|pilates|walk/i, name: "Train at the warriors' guild", xp: 35, icon: "dumbbell" },
+  { re: /dish|clean|tidy|vacuum/i, name: "Vanquish the dish hydra", xp: 25, icon: "plate" },
+  { re: /bill|bank|rent|tax|pay/i, name: "Pay tribute to the crown", xp: 20, icon: "coin" },
+];
+function toQuest(errand) {
+  const hit = QUEST_BOOK.find(q => q.re.test(errand));
+  const base = hit || { name: "Embark on: " + errand, xp: 10, icon: "star" };
+  return { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), errand, name: base.name, xp: base.xp, icon: base.icon, boss: !!base.boss, done: false };
+}
+
+// ---------- state (localStorage; writes can fail per Meta docs) ----------
+const XP_PER_LEVEL = 100;
+const KEY = "sideQuestClub.v1";
+const today = () => new Date().toLocaleDateString("en-CA");
+function defaultState() {
+  return {
+    day: today(), level: 3, xp: 65, achievements: [],
+    quests: ["Grocery shopping", "Pick up a package", "Get coffee", "Do laundry", "Reply to emails"].map(toQuest),
+  };
+}
+function load() {
+  try {
+    const s = JSON.parse(localStorage.getItem(KEY));
+    if (!s) return defaultState();
+    if (s.day !== today()) { s.day = today(); s.quests.forEach(q => (q.done = false)); }  // new day, fresh quest board
+    return s;
+  } catch { return defaultState(); }
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} }
+let S = load();
+
+// ---------- rendering ----------
+const app = document.getElementById("app");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const sparkles = (spots) => spots.map(([l, t, s = 30, d = 0]) => `<span class="spark" style="left:${l}%;top:${t}%;font-size:${s}px;animation-delay:${d}s">✦</span>`).join("");
+const pct = xp => Math.round((xp / XP_PER_LEVEL) * 100);
+
+const screens = {
+  home() {
+    const left = S.quests.filter(q => !q.done).length;
+    return `
+      ${sparkles([[18, 40, 34], [78, 34, 26, .5], [70, 18, 18, 1]])}
+      <h1>side quest club ♡</h1>
+      <div class="bounce">${sprite("bunny", 11)}</div>
+      <div class="barlabels"><span>LVL ${S.level}</span><span>${S.xp}/${XP_PER_LEVEL} XP</span></div>
+      <div class="bar"><i style="width:${pct(S.xp)}%"></i></div>
+      <button class="pill" data-go="list" autofocus>${left ? `${left} quest${left > 1 ? "s" : ""} today` : "all quests done ♡"}</button>`;
+  },
+
+  list() {
+    const next = S.quests.find(q => !q.done);
+    const rows = S.quests.map(q => `
+      <button class="row ${q.done ? "done" : ""} ${q.boss ? "boss" : ""}" data-go="detail" data-id="${q.id}" ${q === next ? "autofocus" : ""}>
+        <span class="check">${q.done ? "✓" : ""}</span>
+        <span>${sprite(q.icon, 4)}</span>
+        <span class="name">${esc(q.name)}${q.boss ? ' <span class="tag">♛ boss</span>' : ""}</span>
+        <span class="xpv">+${q.xp} XP</span>
+      </button>`).join("");
+    return `
+      <h1 style="font-size:40px">✿ today's quests ♡</h1>
+      <div class="list">${rows || '<p class="sub">No quests yet. Add one!</p>'}</div>
+      <div class="row-actions">
+        <button class="pill ghost" data-go="add">+ add errand</button>
+      </div>`;
+  },
+
+  detail({ id }) {
+    const q = S.quests.find(q => q.id === id);
+    if (!q) return screens.list();
+    const head = q.boss ? `<h1 class="underline">♛ boss quest ♛</h1>` : "";
+    return `
+      ${sparkles([[14, 30], [84, 26, 26, .4], [80, 62, 20, .9], [12, 70, 22, 1.2]])}
+      ${head}
+      <div class="bounce">${sprite(q.icon, 10)}</div>
+      <p class="big">${esc(q.name)}${q.done ? "" : "?"}</p>
+      <p class="sub">${esc(q.errand)} · <span class="xp" style="font-size:26px">+${q.xp} XP</span></p>
+      <div class="row-actions">
+        ${q.done
+          ? `<button class="pill ghost" data-undo="${q.id}">undo</button>`
+          : `<button class="pill" data-complete="${q.id}" autofocus>Mark complete</button>`}
+        <button class="pill ghost" data-remove="${q.id}">remove</button>
+      </div>`;
+  },
+
+  complete({ id, gained, leveled }) {
+    const q = S.quests.find(q => q.id === id) || { name: "Quest", icon: "star" };
+    return `
+      ${burst()}
+      ${sparkles([[80, 22, 30], [86, 44, 22, .3], [10, 30, 26, .6], [14, 72, 20, .9]])}
+      <div class="box" style="display:flex;gap:18px;align-items:center;text-align:left">
+        <span class="check" style="inline-size:44px;block-size:44px;font-size:34px;background:var(--pink);border-color:var(--pink);color:#2a0d1b">✓</span>
+        <div><p class="big" style="font-size:30px">${esc(q.name.toLowerCase())}… done!</p>
+        <p class="xp" style="margin:4px 0 0">+${gained} XP</p></div>
+      </div>
+      <div class="bounce">${sprite("bunny", 8)}</div>
+      <p class="tag">QUEST COMPLETE!</p>
+      <button class="pill" data-next="${leveled ? "levelup" : "after"}" autofocus>${leveled ? "whoa →" : "yay ♡"}</button>`;
+  },
+
+  levelup({ from, to }) {
+    return `
+      ${burst()}
+      ${sparkles([[16, 26, 34], [82, 22, 40, .3], [10, 60, 24, .6], [88, 66, 28, .9]])}
+      <p class="xp" style="font-size:54px;margin:0">LEVEL UP!</p>
+      <div class="bar"><i id="lvbar" style="width:100%"></i></div>
+      <p class="big" style="font-size:46px">LVL ${from} → LVL ${to}</p>
+      <button class="pill" data-next="after" autofocus>continue</button>`;
+  },
+
+  achievement() {
+    return `
+      ${burst()}
+      ${sparkles([[14, 34], [84, 30, 34, .3], [80, 66, 24, .6], [18, 70, 20, .9]])}
+      <h1 class="underline">achievement!</h1>
+      <div class="stamp">${sprite("bunny", 9)}</div>
+      <p class="big">Functioning Adult</p>
+      <p class="sub">Completed all daily quests</p>
+      <button class="pill" data-go="home" autofocus>♡</button>`;
+  },
+
+  add() {
+    return `
+      <h1 style="font-size:40px">new side quest</h1>
+      <p class="sub">What's the errand?</p>
+      <input type="text" id="errand" placeholder="e.g. get coffee" autocomplete="off" autofocus>
+      <p class="tag" id="preview">&nbsp;</p>
+      <div class="row-actions">
+        <button class="pill" id="addBtn">Add quest</button>
+        <button class="pill ghost" data-go="list">cancel</button>
+      </div>`;
+  },
+};
+
+function burst() {
+  return Array.from({ length: 12 }, (_, i) => {
+    const a = (i / 12) * Math.PI * 2, r = 170 + (i % 3) * 30;
+    return `<span class="burst" style="--dx:${Math.cos(a) * r}px;--dy:${Math.sin(a) * r}px">${i % 2 ? "✦" : "♡"}</span>`;
+  }).join("");
+}
+
+function render(state) {
+  const name = state?.screen || "home";
+  app.innerHTML = `<main class="screen" data-screen="${name}">${screens[name](state || {})}</main>`;
+  const f = app.querySelector("[autofocus]") || app.querySelector("button, input");
+  f?.focus({ preventScroll: true });
+  if (name === "add") wireAdd();
+}
+
+// ---------- navigation (Back = history; Meta caps pushState at 5 entries) ----------
+// Keep history shallow: home → list → detail. Celebrations replace in place.
+// Each entry remembers its depth (d) so we can always unwind back to home.
+const PUSH = { list: true, add: true, detail: true };
+function go(state, { replace = false } = {}) {
+  const cur = history.state || { screen: "home", d: 0 };
+  if (PUSH[state.screen] && !replace) { state.d = cur.d + 1; history.pushState(state, ""); }
+  else { state.d = cur.d; history.replaceState(state, ""); }
+  render(state);
+}
+addEventListener("popstate", e => render(e.state || { screen: "home", d: 0 }));
+
+function goHome() {
+  const d = (history.state || {}).d || 0;
+  if (d > 0) history.go(-d); else render({ screen: "home", d: 0 });
+}
+
+// ---------- actions ----------
+app.addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  const d = b.dataset;
+  if (d.go === "home") return goHome();
+  if (d.go) return go({ screen: d.go, id: d.id });
+  if (d.complete) return complete(d.complete);
+  if (d.undo) { const q = S.quests.find(q => q.id === d.undo); q.done = false; S.xp = Math.max(0, S.xp - q.xp); save(); return go({ screen: "detail", id: q.id }, { replace: true }); }
+  if (d.remove) { S.quests = S.quests.filter(q => q.id !== d.remove); save(); return history.back(); }
+  if (d.next === "levelup") return go({ screen: "levelup", ...pending });
+  if (d.next === "after") {
+    if (S.quests.length && S.quests.every(q => q.done)) {
+      if (!S.achievements.includes(S.day)) S.achievements.push(S.day), save();
+      return go({ screen: "achievement" });
+    }
+    return history.back();  // celebration replaced the detail entry, so Back lands on the list
+  }
+});
+
+let pending = {};
+function complete(id) {
+  const q = S.quests.find(q => q.id === id); if (!q || q.done) return;
+  q.done = true;
+  const from = S.level;
+  S.xp += q.xp;
+  while (S.xp >= XP_PER_LEVEL) { S.xp -= XP_PER_LEVEL; S.level++; }
+  save();
+  pending = { from, to: S.level };
+  go({ screen: "complete", id, gained: q.xp, leveled: S.level > from });
+  try { if ("speechSynthesis" in window) speechSynthesis.speak(new SpeechSynthesisUtterance(`Quest complete. Plus ${q.xp} X P.`)); } catch {}
+}
+
+function wireAdd() {
+  const input = document.getElementById("errand"), prev = document.getElementById("preview");
+  // The glasses composer commits text via input/change, not per-key events.
+  const upd = () => { prev.textContent = input.value.trim() ? `→ ${toQuest(input.value.trim()).name}` : " "; };
+  input.addEventListener("input", upd); input.addEventListener("change", upd);
+  const add = () => {
+    const v = input.value.trim(); if (!v) return input.focus();
+    S.quests.push(toQuest(v)); save(); history.back();
+  };
+  document.getElementById("addBtn").addEventListener("click", add);
+  input.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); add(); } });
+}
+
+// ---------- desktop fallback for arrow-key focus ----------
+// On the glasses, Chromium spatial navigation moves focus for us. In a normal desktop
+// browser it doesn't, so if focus hasn't moved after an arrow key, move it ourselves.
+addEventListener("keydown", e => {
+  const dirs = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] };
+  if (!dirs[e.key] || e.target.tagName === "INPUT") return;
+  const before = document.activeElement;
+  setTimeout(() => {
+    if (document.activeElement !== before) return;
+    const [dx, dy] = dirs[e.key];
+    const c = r => [r.left + r.width / 2, r.top + r.height / 2];
+    const [x0, y0] = c(before.getBoundingClientRect());
+    let best = null, bestScore = Infinity;
+    app.querySelectorAll("button, input").forEach(el => {
+      if (el === before) return;
+      const [x, y] = c(el.getBoundingClientRect());
+      const along = (x - x0) * dx + (y - y0) * dy;
+      if (along <= 4) return;
+      const across = Math.abs((x - x0) * dy) + Math.abs((y - y0) * dx);
+      const score = along + across * 2;
+      if (score < bestScore) bestScore = score, best = el;
+    });
+    best?.focus(); best?.scrollIntoView({ block: "nearest" });
+  }, 0);
+});
+
+history.replaceState({ screen: "home", d: 0 }, "");
+render({ screen: "home", d: 0 });
+</script>
+</body>
+</html>
