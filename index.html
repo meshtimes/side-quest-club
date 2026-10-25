@@ -702,12 +702,9 @@ const screens = {
       <div class="topbun">${getHopBunny(4)}</div>
       ${burst()}
       <p class="xp" style="margin:0">QUEST COMPLETE!</p>
-      <div>
-        <p class="big" style="font-size:24px">${esc(q.name.toLowerCase())}… done!</p>
-        <p class="xp" style="margin:4px 0 0">+${gained} XP</p>
-      </div>
+      <p class="big" style="font-size:24px">${esc(q.name.toLowerCase())}… done!</p>
       <div class="done-icon">${sprite(q.icon, 10)}</div>
-      <button class="pill" data-next="${leveled ? "levelup" : "after"}" autofocus>${leveled ? "whoa →" : "yay ♡"}</button>`;
+      <button class="pill" data-next="${leveled ? "levelup" : "after"}" autofocus>+${gained} XP ${leveled ? "→" : "♡"}</button>`;
   },
 
   levelup({ from, to }) {
