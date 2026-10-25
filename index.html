@@ -73,13 +73,11 @@
   .row .sprite { max-block-size: 40px; inline-size: auto; }
   /* quest names use VT323: taller letters read better than Tiny5 at list size; XP stays Tiny5 */
   .row .name { font-family: "VT323", monospace; font-size: 30px; line-height: 1; }
-  .row .name .tag { font-size: 22px; }
   .row.done { opacity: .5; }
   .row.done .name { text-decoration: line-through; }
   .row .xpv { color: var(--pink); white-space: nowrap; }
   .check { inline-size: 24px; block-size: 24px; border: 2px solid var(--ink); border-radius: 0; display: grid; place-items: center; font-size: 16px; }
   .row.done .check { background: var(--pink); border-color: var(--pink); color: #2a0d1b; }
-  .row.boss { border-color: var(--pink); }
   .row:focus-visible { outline-offset: 2px; }
 
   .bar { inline-size: 100%; max-inline-size: 420px; block-size: 26px; border: 2px solid var(--ink); border-radius: 0; overflow: hidden; position: relative; }
@@ -344,7 +342,7 @@ const QUEST_BOOK = [
   { re: /grocer|food|market|trader|whole ?foods/i, name: "Acquire survival supplies", xp: 30, icon: "basket" },
   { re: /package|parcel|mail ?room|pick ?up|amazon|ups|fedex/i, name: "Retrieve the mysterious parcel", xp: 20, icon: "box" },
   { re: /coffee|latte|matcha|caf|\btea\b/i, name: "Obtain caffeine", xp: 15, icon: "teapot" },
-  { re: /laundry|wash clothes|dry ?clean/i, name: "Laundry", xp: 40, icon: "hanger", boss: true },
+  { re: /laundry|wash clothes|dry ?clean/i, name: "Laundry", xp: 40, icon: "hanger" },
   { re: /water|plant|garden|flower/i, name: "Water plants", xp: 20, icon: "flowers" },
   { re: /e-?mail|inbox|reply|message/i, name: "Inbox zero", xp: 25, icon: "mail" },
   { re: /gym|workout|run|yoga|pilates|walk/i, name: "Train at the warriors' guild", xp: 35, icon: "dumbbell" },
@@ -355,7 +353,7 @@ const QUEST_BOOK = [
 function toQuest(errand) {
   const hit = QUEST_BOOK.find(q => q.re.test(errand));
   const base = hit || { name: "Embark on: " + errand, xp: 10, icon: "star" };
-  return { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), errand, name: base.name, xp: base.xp, icon: base.icon, boss: !!base.boss, done: false };
+  return { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), errand, name: base.name, xp: base.xp, icon: base.icon, done: false };
 }
 
 // ---------- state (localStorage; writes can fail per Meta docs) ----------
@@ -622,10 +620,10 @@ const screens = {
   list() {
     const next = S.quests.find(q => !q.done);
     const rows = S.quests.map(q => `
-      <button class="row ${q.done ? "done" : ""} ${q.boss ? "boss" : ""}" data-go="detail" data-id="${q.id}" ${q === next ? "autofocus" : ""}>
+      <button class="row ${q.done ? "done" : ""}" data-go="detail" data-id="${q.id}" ${q === next ? "autofocus" : ""}>
         <span class="check">${q.done ? "✓" : ""}</span>
         <span>${sprite(q.icon, 4)}</span>
-        <span class="name">${esc(q.name)}${q.boss ? ' <span class="tag">♛ boss</span>' : ""}</span>
+        <span class="name">${esc(q.name)}</span>
         <span class="xpv">+${q.xp} XP</span>
       </button>`).join("");
     return `
@@ -639,10 +637,8 @@ const screens = {
   detail({ id }) {
     const q = S.quests.find(q => q.id === id);
     if (!q) return screens.list();
-    const head = q.boss ? `<h1 class="underline">♛ boss quest ♛</h1>` : "";
     return `
       ${sparkles([[14, 30], [84, 26, 26, .4], [80, 62, 20, .9], [12, 70, 22, 1.2]])}
-      ${head}
       <div class="bounce">${sprite(q.icon, 10)}</div>
       <p class="big">${esc(q.name)}</p>
       <p class="sub">${esc(q.errand)} · <span class="xp" style="font-size:24px">+${q.xp} XP</span></p>
