@@ -8,7 +8,7 @@
 <meta name="mrbd-web-app-capable" content="yes">
 <title>questie</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Tiny5&family=VT323&display=swap" rel="stylesheet">
 <style>
   :root {
     --pink: #ffa8cf;
@@ -71,6 +71,9 @@
   .screen[data-screen=list] .list { max-block-size: 444px; gap: 8px; }
   .row { padding-block: 5px; min-block-size: 56px; box-sizing: border-box; }
   .row .sprite { max-block-size: 40px; inline-size: auto; }
+  /* quest names use VT323: taller letters read better than Tiny5 at list size; XP stays Tiny5 */
+  .row .name { font-family: "VT323", monospace; font-size: 30px; line-height: 1; }
+  .row .name .tag { font-size: 22px; }
   .row.done { opacity: .5; }
   .row.done .name { text-decoration: line-through; }
   .row .xpv { color: var(--pink); white-space: nowrap; }
