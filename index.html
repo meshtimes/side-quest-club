@@ -55,7 +55,7 @@
   .pill.ghost { background: none; color: var(--ink); border: 2px solid var(--line); font-size: 24px; padding: 8px 24px; }
   /* Docs: keep a visible focus ring; browser focus is the source of truth. Uses :focus, not
      :focus-visible, because a touchpad/Neural Band tap can count as a click and hide the ring. */
-  :where(button, a, input):focus { outline: 3px solid var(--ink); outline-offset: 4px; }
+  :where(button, a, input):focus, [data-sel] { outline: 3px solid var(--ink); outline-offset: 4px; }
   .pill:focus { outline-color: var(--ink); }
 
   .box { border: 2px solid var(--line); border-radius: 0; padding: 14px 18px; }
@@ -120,8 +120,7 @@
 
   .folkframe { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; pointer-events: none; }
   .done-icon .sprite { display: block; max-block-size: 48px; inline-size: auto; }
-  .stamp { padding: 10px 14px; border-radius: 0; outline: 4px dashed var(--pink); outline-offset: 4px; }
-  .stamp .hopbun { display: block; }
+  
   .tag { font-size: 16px; color: var(--dim); }
 
   /* Desktop-only frame so the 600×600 glasses view is obvious outside the glasses. */
@@ -722,10 +721,8 @@ const screens = {
     return `
       ${getFolkFrame()}
       ${burst()}
-      <h1 class="underline">achievement!</h1>
-      <div class="stamp">${getHopBunny()}</div>
-      <p class="big">Functioning Adult</p>
-      <p class="sub">Completed all daily quests</p>
+      <p class="xp" style="margin:0">all quests completed</p>
+      ${getHopBunny()}
       <button class="pill" data-go="home" autofocus>♡</button>`;
   },
 
@@ -753,11 +750,36 @@ function render(state) {
   const name = state?.screen || "home";
   app.innerHTML = `<main class="screen" data-screen="${name}">${screens[name](state || {})}</main>`;
   const f = app.querySelector("[autofocus]") || app.querySelector("button, input");
-  f?.focus({ preventScroll: true });
-  // Re-apply once the screen has drawn, in case the glasses' own navigation grabbed focus.
-  requestAnimationFrame(() => { if (f?.isConnected && document.activeElement !== f) f.focus({ preventScroll: true }); });
+  preselect(f);
   if (name === "add") wireAdd();
 }
+
+// ---------- preselecting the main button ----------
+// On the glasses, focus() on a freshly rendered screen doesn't always stick (the glasses' own
+// navigation can take it back while the screen changes), so the main button is also marked with
+// data-sel, focus is re-applied for a short while, and a tap or first swipe made while nothing
+// is focused starts from the marked button.
+let preselectToken = 0;
+const markSel = el => { app.querySelectorAll("[data-sel]").forEach(e => e !== el && e.removeAttribute("data-sel")); el?.setAttribute("data-sel", ""); };
+function preselect(f) {
+  const token = ++preselectToken;
+  markSel(f);
+  if (!f) return;
+  const grab = () => { if (token === preselectToken && f.isConnected && document.activeElement !== f) f.focus({ preventScroll: true }); };
+  grab(); requestAnimationFrame(grab);
+  [60, 200, 500].forEach(ms => setTimeout(grab, ms));
+}
+const stopPreselect = () => { preselectToken++; };
+addEventListener("pointerdown", stopPreselect, true);
+addEventListener("focusin", e => { if (app.contains(e.target)) markSel(e.target); });
+addEventListener("keydown", e => {
+  stopPreselect();
+  const lost = !document.activeElement || document.activeElement === document.body;
+  const sel = app.querySelector("[data-sel]");
+  if (!lost || !sel) return;
+  if (e.key === "Enter") { e.preventDefault(); sel.click(); }
+  else if (e.key.startsWith("Arrow")) sel.focus({ preventScroll: true });   // the swipe then moves on from the marked button
+}, true);
 
 // ---------- navigation (Back = history; Meta caps pushState at 5 entries) ----------
 // Keep history shallow: home → list → detail. Celebrations replace in place.
