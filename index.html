@@ -117,6 +117,8 @@
   .stats .bar > i { border-radius: 0; }
   .pill.pixel { font-family: "Tiny5", monospace; font-size: 24px; border-radius: 0; padding: 8px 28px; }
 
+  .folkframe { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; pointer-events: none; }
+  .done-icon .sprite { display: block; max-block-size: 48px; inline-size: auto; }
   .stamp { padding: 10px; background: var(--pink); border-radius: 0; outline: 4px dashed var(--pink); outline-offset: 4px; }
   .tag { font-size: 16px; color: var(--dim); }
 
@@ -394,24 +396,12 @@ function load() {
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} }
 let S = load();
 
-// ---------- folk-art cutout card ----------
-// A W×H stitch grid: every set cell becomes a hole punched through the pink paper.
-// Built lazily because the "questie" title is rasterised from the Tiny5 web font.
-let folkCard = null;
-function getFolkCard() { return folkCard || (folkCard = buildFolkCard()); }
-document.fonts?.load('40px "Tiny5"').then(() => {
-  folkCard = null;
-  if ((history.state || {}).screen === "home") render(history.state);
-}).catch(() => {});
-
-function buildFolkCard() {
-  const W = 52, H = 44, g = new Set(), tw = new Set();
-  const k = (x, y) => x + "," + y;
-  const set = (x, y, into = g) => { if (x >= 0 && y >= 0 && x < W && y < H) into.add(k(x, y)); };
-  const stamp = (rows, x0, y0, into) => rows.forEach((r, y) => [...r].forEach((c, x) => c === "#" && set(x0 + x, y0 + y, into)));
-
-  // Border: a fine single-stitch vine with tiny leaves along the top and left,
-  // mirrored on both axes so the frame is symmetric.
+// Folk-art border: a fine single-stitch vine with tiny leaves along the top and left,
+// mirrored on both axes so the frame is symmetric. Returns a set of "x,y" stitches.
+function folkBorder(W, H) {
+  const g = new Set(), k = (x, y) => x + "," + y;
+  const set = (x, y) => { if (x >= 0 && y >= 0 && x < W && y < H) g.add(k(x, y)); };
+  const stamp = (rows, x0, y0) => rows.forEach((r, y) => [...r].forEach((c, x) => c === "#" && set(x0 + x, y0 + y)));
   const wave = t => Math.round(Math.sin((t / 10) * Math.PI * 2));
   const DIAMOND = [".#.", "#.#", ".#."];
   const FLOWER = ["..#..", ".#.#.", "#...#", ".#.#.", "..#.."];
@@ -437,6 +427,171 @@ function buildFolkCard() {
   stamp(FLOWER, 0, H / 2 - 3);
   [...g].forEach(p => { const [x, y] = p.split(",").map(Number); set(W - 1 - x, y); set(x, H - 1 - y); set(W - 1 - x, H - 1 - y); });
 
+  return g;
+}
+
+// Sitting bunny (stitch-for-stitch from the chart), animated frame by frame in place:
+// idle → crouch → takeoff → air → land → settle. Each frame is its own group of stitches
+// and CSS flips which one is visible; the sprite never moves sideways.
+const BUNNY_FRAMES = {
+  idle: { lift: 0, rows: [
+    "..#............",
+    "..##...........",
+    "..##....##.....",
+    "...##..##......",
+    "....#.##.......",
+    "..####.........",
+    ".#####..###....",
+    "##.#########...",
+    "#############..",
+    ".#############.",
+    "...############",
+    "...###########.",
+    "...####..####..",
+    "..###..#####...",
+    ".###..#####....",
+  ] },
+  crouch: { lift: 0, rows: [
+    ".#.............",
+    ".##......##....",
+    "..##....##.....",
+    "...##..##......",
+    "....#.##.......",
+    "..####.........",
+    ".#####..###....",
+    "##.#########...",
+    "#############..",
+    ".#############.",
+    "...############",
+    "...####..####..",
+    ".####..######..",
+    "###..#######...",
+  ] },
+  takeoff: { lift: 0, rows: [
+    "...#...........",
+    "...##....#.....",
+    "...##...##.....",
+    "...##..##......",
+    "....#.##.......",
+    "..####.........",
+    ".#####..###....",
+    "##.#########...",
+    "#############..",
+    ".#############.",
+    "...############",
+    "...###########.",
+    "...###########.",
+    ".##.###..####..",
+    "........#####..",
+    ".........####..",
+  ] },
+  air: { lift: 3, rows: [
+    "..##.....##....",
+    "...##..##......",
+    "....#.##.......",
+    "..####.........",
+    ".#####..###....",
+    "##.#########...",
+    "#############..",
+    ".#############.",
+    "...############",
+    "...###########.",
+    "##.####..####..",
+    "...##....######",
+    "..........###..",
+  ] },
+  land: { lift: 0, rows: [
+    ".##.......##...",
+    "..##.....##....",
+    "...##..##......",
+    "....#.##.......",
+    "..####.........",
+    ".#####..###....",
+    "##.#########...",
+    "#############..",
+    "...############",
+    "...####..####..",
+    ".###..######...",
+    "###..#######...",
+  ] },
+  settle: { lift: 0, rows: [
+    "...#...........",
+    "...##....#.....",
+    "...##...##.....",
+    "...##..##......",
+    "....#.##.......",
+    "..####.........",
+    ".#####..###....",
+    "##.#########...",
+    "#############..",
+    ".#############.",
+    "...############",
+    "...###########.",
+    "...####..####..",
+    "..###..#####...",
+    ".###..#####....",
+  ] },
+};
+const BUNNY_SEQ = [["idle", 520], ["crouch", 130], ["takeoff", 110], ["air", 200], ["land", 140], ["settle", 170], ["idle", 380], ["crouch", 110], ["land", 120]];
+
+// CSS that flips between bunny frames: one keyframe track per frame, visible only in its SEQ slots.
+function bunnyHopCss(prefix, scope) {
+  const total = BUNNY_SEQ.reduce((t, [, ms]) => t + ms, 0);
+  return Object.keys(BUNNY_FRAMES).map(name => {
+    let t = 0, kf = "";
+    BUNNY_SEQ.forEach(([n, ms]) => { kf += `${(t / total * 100).toFixed(2)}%{opacity:${n === name ? 1 : 0}}`; t += ms; });
+    return `@keyframes ${prefix}-${name}{${kf}100%{opacity:${BUNNY_SEQ[0][0] === name ? 1 : 0}}}
+      ${scope} .${prefix}-${name}{opacity:${name === "idle" ? 1 : 0};animation:${prefix}-${name} ${total}ms steps(1,end) infinite}`;
+  }).join("");
+}
+// Stitches for each frame, standing on row `ground` with its left edge at column `bx`.
+function bunnyFrameStitches(bx, ground) {
+  const out = {};
+  Object.entries(BUNNY_FRAMES).forEach(([name, f]) => {
+    const s = (out[name] = new Set()), top = ground - f.lift - f.rows.length + 1;
+    f.rows.forEach((r, y) => [...r].forEach((c, x) => c === "#" && s.add((bx + x) + "," + (top + y))));
+  });
+  return out;
+}
+// Filled pink version of the hopping bunny (the home card cuts the same frames out of paper).
+let hopBunny = null;
+function getHopBunny() {
+  if (hopBunny) return hopBunny;
+  const W = 15, H = 16, gap = 0.12, frames = bunnyFrameStitches(0, H - 1);
+  const rects = set => [...set].map(p => { const [x, y] = p.split(",").map(Number);
+    return `<rect x="${x + gap}" y="${y + gap}" width="${1 - gap * 2}" height="${1 - gap * 2}"/>`; }).join("");
+  return (hopBunny = `<svg class="hopbun" viewBox="0 0 ${W} ${H}" width="${W * 8}" height="${H * 8}" shape-rendering="crispEdges" aria-hidden="true" fill="var(--pink)">
+    <style>${bunnyHopCss("hb", ".hopbun")}</style>
+    ${Object.entries(frames).map(([n, set]) => `<g class="hb-${n}">${rects(set)}</g>`).join("")}</svg>`);
+}
+// Folk border drawn as filled pink stitches around a whole screen.
+let folkFrame = null;
+function getFolkFrame() {
+  if (folkFrame) return folkFrame;
+  const N = 56, gap = 0.14;
+  const rects = [...folkBorder(N, N)].map(p => { const [x, y] = p.split(",").map(Number);
+    return `<rect x="${x + gap}" y="${y + gap}" width="${1 - gap * 2}" height="${1 - gap * 2}"/>`; }).join("");
+  return (folkFrame = `<svg class="folkframe" viewBox="0 0 ${N} ${N}" preserveAspectRatio="none" shape-rendering="crispEdges" aria-hidden="true" fill="var(--pink)">${rects}</svg>`);
+}
+
+// ---------- folk-art cutout card ----------
+// A W×H stitch grid: every set cell becomes a hole punched through the pink paper.
+// Built lazily because the "questie" title is rasterised from the Tiny5 web font.
+let folkCard = null;
+function getFolkCard() { return folkCard || (folkCard = buildFolkCard()); }
+document.fonts?.load('40px "Tiny5"').then(() => {
+  folkCard = null;
+  if ((history.state || {}).screen === "home") render(history.state);
+}).catch(() => {});
+
+function buildFolkCard() {
+  const W = 52, H = 44, g = new Set(), tw = new Set();
+  const k = (x, y) => x + "," + y;
+  const set = (x, y, into = g) => { if (x >= 0 && y >= 0 && x < W && y < H) into.add(k(x, y)); };
+  const stamp = (rows, x0, y0, into) => rows.forEach((r, y) => [...r].forEach((c, x) => c === "#" && set(x0 + x, y0 + y, into)));
+
+  folkBorder(W, H).forEach(p => g.add(p));
+
   // Title: rasterise "questie" in Tiny5 so each font pixel becomes one stitch.
   try {
     const cv = document.createElement("canvas"), F = 80; cv.width = 900; cv.height = 160;
@@ -456,123 +611,8 @@ function buildFolkCard() {
       if (on(Math.floor(x0 + (i + 0.5) * u), Math.floor(y0 + (j + 0.5) * u))) set(tx + i, ty + j);
   } catch {}
 
-  // Sitting bunny (stitch-for-stitch from the chart), animated frame by frame in place:
-  // idle → crouch → takeoff → air → land → settle. Each frame is its own group of holes
-  // and CSS flips which one is visible; the sprite never moves sideways.
-  const FRAMES = {
-    idle: { lift: 0, rows: [
-      "..#............",
-      "..##...........",
-      "..##....##.....",
-      "...##..##......",
-      "....#.##.......",
-      "..####.........",
-      ".#####..###....",
-      "##.#########...",
-      "#############..",
-      ".#############.",
-      "...############",
-      "...###########.",
-      "...####..####..",
-      "..###..#####...",
-      ".###..#####....",
-    ] },
-    crouch: { lift: 0, rows: [
-      ".#.............",
-      ".##......##....",
-      "..##....##.....",
-      "...##..##......",
-      "....#.##.......",
-      "..####.........",
-      ".#####..###....",
-      "##.#########...",
-      "#############..",
-      ".#############.",
-      "...############",
-      "...####..####..",
-      ".####..######..",
-      "###..#######...",
-    ] },
-    takeoff: { lift: 0, rows: [
-      "...#...........",
-      "...##....#.....",
-      "...##...##.....",
-      "...##..##......",
-      "....#.##.......",
-      "..####.........",
-      ".#####..###....",
-      "##.#########...",
-      "#############..",
-      ".#############.",
-      "...############",
-      "...###########.",
-      "...###########.",
-      ".##.###..####..",
-      "........#####..",
-      ".........####..",
-    ] },
-    air: { lift: 3, rows: [
-      "..##.....##....",
-      "...##..##......",
-      "....#.##.......",
-      "..####.........",
-      ".#####..###....",
-      "##.#########...",
-      "#############..",
-      ".#############.",
-      "...############",
-      "...###########.",
-      "##.####..####..",
-      "...##....######",
-      "..........###..",
-    ] },
-    land: { lift: 0, rows: [
-      ".##.......##...",
-      "..##.....##....",
-      "...##..##......",
-      "....#.##.......",
-      "..####.........",
-      ".#####..###....",
-      "##.#########...",
-      "#############..",
-      "...############",
-      "...####..####..",
-      ".###..######...",
-      "###..#######...",
-    ] },
-    settle: { lift: 0, rows: [
-      "...#...........",
-      "...##....#.....",
-      "...##...##.....",
-      "...##..##......",
-      "....#.##.......",
-      "..####.........",
-      ".#####..###....",
-      "##.#########...",
-      "#############..",
-      ".#############.",
-      "...############",
-      "...###########.",
-      "...####..####..",
-      "..###..#####...",
-      ".###..#####....",
-    ] },
-  };
-  const SEQ = [["idle", 520], ["crouch", 130], ["takeoff", 110], ["air", 200], ["land", 140], ["settle", 170], ["idle", 380], ["crouch", 110], ["land", 120]];
-  const BW = 15, bx = Math.round((W - BW) / 2), ground = H - 10;
-  const frameHoles = {};
-  Object.entries(FRAMES).forEach(([name, f]) => {
-    const s = (frameHoles[name] = new Set()), top = ground - f.lift - f.rows.length + 1;
-    f.rows.forEach((r, y) => [...r].forEach((c, x) => c === "#" && s.add(k(bx + x, top + y))));
-  });
-  // One keyframe track per frame: visible only during its slots in SEQ.
-  const total = SEQ.reduce((t, [, ms]) => t + ms, 0);
-  const hopCss = Object.keys(FRAMES).map(name => {
-    let t = 0, kf = "";
-    SEQ.forEach(([n, ms]) => { kf += `${(t / total * 100).toFixed(2)}%{opacity:${n === name ? 1 : 0}}`; t += ms; });
-    return `@keyframes bun-${name}{${kf}100%{opacity:${SEQ[0][0] === name ? 1 : 0}}}
-      .card .bun-${name}{opacity:${name === "idle" ? 1 : 0};animation:bun-${name} ${total}ms steps(1,end) infinite}`;
-  }).join("");
+  const BW = 15, frameHoles = bunnyFrameStitches(Math.round((W - BW) / 2), H - 10);
+  const hopCss = bunnyHopCss("bun", ".card");
 
   // Twinkling sparkles beside the title
   const SPARK = [".#.", "#.#", ".#."];
@@ -653,14 +693,14 @@ const screens = {
   complete({ id, gained, leveled }) {
     const q = S.quests.find(q => q.id === id) || { name: "Quest", icon: "star" };
     return `
+      ${getFolkFrame()}
       ${burst()}
-      ${sparkles([[80, 22, 30], [86, 44, 22, .3], [10, 30, 26, .6], [14, 72, 20, .9]])}
       <div class="box" style="display:flex;gap:18px;align-items:center;text-align:left">
-        <span class="check" style="inline-size:44px;block-size:44px;font-size:34px;background:var(--pink);border-color:var(--pink);color:#2a0d1b">✓</span>
+        <span class="done-icon">${sprite(q.icon, 4)}</span>
         <div><p class="big" style="font-size:24px">${esc(q.name.toLowerCase())}… done!</p>
         <p class="xp" style="margin:4px 0 0">+${gained} XP</p></div>
       </div>
-      <div class="bounce">${sprite("bunny", 8)}</div>
+      ${getHopBunny()}
       <p class="tag">QUEST COMPLETE!</p>
       <button class="pill" data-next="${leveled ? "levelup" : "after"}" autofocus>${leveled ? "whoa →" : "yay ♡"}</button>`;
   },
