@@ -68,8 +68,9 @@
     border: 2px solid var(--line); border-radius: 0; padding: 8px 14px;
   }
   /* fit six quests on the 600×600 screen: shorter rows, icons capped to one height */
-  .screen[data-screen=list] { padding-block: 20px; gap: 12px; }
-  .screen[data-screen=list] .list { max-block-size: 444px; gap: 8px; }
+  .screen[data-screen=list] { padding-block: 14px; gap: 10px; }
+  .screen[data-screen=list] .list { max-block-size: 420px; gap: 8px; }
+  .screen[data-screen=list] .stats { font-family: "Tiny5", monospace; }
   .row { padding-block: 5px; min-block-size: 56px; box-sizing: border-box; }
   .row .sprite { max-block-size: 40px; inline-size: auto; }
   /* quest names use VT323: taller letters read better than Tiny5 at list size; XP stays Tiny5 */
@@ -400,15 +401,39 @@ function load() {
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} }
 let S = load();
 
-// Folk-art border: a fine single-stitch vine with tiny leaves along the top and left,
-// mirrored on both axes so the frame is symmetric. Returns a set of "x,y" stitches.
-function folkBorder(W, H) {
+// Folk-art lace border, drawn along the top and left and mirrored on both axes so the frame
+// is symmetric. Returns a set of "x,y" stitches. Patterns:
+//   vine    – wavy vine with tiny leaves and diamonds (home card, all-done screen)
+//   zigzag  – rickrack zigzag with a dot in every valley (quest complete)
+//   scallop – row of little arches with dots between them (level up)
+function folkBorder(W, H, pattern = "vine") {
   const g = new Set(), k = (x, y) => x + "," + y;
   const set = (x, y) => { if (x >= 0 && y >= 0 && x < W && y < H) g.add(k(x, y)); };
   const stamp = (rows, x0, y0) => rows.forEach((r, y) => [...r].forEach((c, x) => c === "#" && set(x0 + x, y0 + y)));
   const wave = t => Math.round(Math.sin((t / 10) * Math.PI * 2));
   const DIAMOND = [".#.", "#.#", ".#."];
   const FLOWER = ["..#..", ".#.#.", "#...#", ".#.#.", "..#.."];
+  if (pattern === "zigzag" || pattern === "scallop") {
+    // Both run along a band 1–3 stitches in from the edge; `edge(t)` is the offset at step t.
+    const edge = pattern === "zigzag"
+      ? t => 1 + Math.abs((t % 6) - 3)                                   // 4,3,2,1,2,3 …  → \/\/\/
+      : t => 3 - Math.round(2 * Math.sin(Math.PI * (t % 8) / 8));        // little arches ∩∩∩
+    const dotAt = pattern === "zigzag" ? t => t % 6 === 3 : t => t % 8 === 0;
+    let prevTop, prevLeft;
+    for (let t = 0; 3 + t < Math.max(W, H) / 2; t++) {
+      const o = edge(t), x = 3 + t, y = 3 + t;
+      if (x < W / 2) { set(x, o); if (prevTop !== undefined && Math.abs(prevTop - o) > 1) set(x, (prevTop + o) >> 1); prevTop = o;
+        if (dotAt(t)) set(x, o + 2); }
+      if (y < H / 2) { set(o, y); if (prevLeft !== undefined && Math.abs(prevLeft - o) > 1) set((prevLeft + o) >> 1, y); prevLeft = o;
+        if (dotAt(t)) set(o + 2, y); }
+    }
+    stamp(pattern === "zigzag" ? ["#.#", ".#.", "#.#"] : [".#.", "###", ".#."], 0, 0);
+    const mid = pattern === "zigzag" ? DIAMOND : ["#.#", "###", ".#."];   // diamond, or a heart for scallops
+    stamp(mid, Math.floor(W / 2) - 1, 0);
+    stamp(mid, 0, Math.floor(H / 2) - 1);
+    [...g].forEach(p => { const [x, y] = p.split(",").map(Number); set(W - 1 - x, y); set(x, H - 1 - y); set(W - 1 - x, H - 1 - y); });
+    return g;
+  }
   let prev;
   for (let x = 3; x < W / 2; x++) {
     const y = 2 + wave(x - 3);
@@ -570,13 +595,15 @@ function getHopBunny(px = 8) {
 }
 // Folk border drawn as filled pink stitches around a whole screen.
 const folkFrames = {};
-function getFolkFrame(bunnyGap = false) {
-  if (folkFrames[bunnyGap]) return folkFrames[bunnyGap];
-  const N = 56, gap = 0.14;
-  const keep = ([x, y]) => !(bunnyGap && y <= 6 && Math.abs(x + 0.5 - N / 2) <= 8);   // room for the top-border bunny
-  const rects = [...folkBorder(N, N)].map(p => p.split(",").map(Number)).filter(keep).map(([x, y]) => {
+// Finer stitches than before (72 across the screen, with wide gaps) so the lace stays thin.
+function getFolkFrame(pattern = "vine", bunnyGap = false) {
+  const key = pattern + bunnyGap;
+  if (folkFrames[key]) return folkFrames[key];
+  const N = 72, gap = 0.2;
+  const keep = ([x, y]) => !(bunnyGap && y <= 7 && Math.abs(x + 0.5 - N / 2) <= 8);   // room for the top-border bunny
+  const rects = [...folkBorder(N, N, pattern)].map(p => p.split(",").map(Number)).filter(keep).map(([x, y]) => {
     return `<rect x="${x + gap}" y="${y + gap}" width="${1 - gap * 2}" height="${1 - gap * 2}"/>`; }).join("");
-  return (folkFrames[bunnyGap] = `<svg class="folkframe" viewBox="0 0 ${N} ${N}" preserveAspectRatio="none" shape-rendering="crispEdges" aria-hidden="true" fill="var(--pink)">${rects}</svg>`);
+  return (folkFrames[key] = `<svg class="folkframe" viewBox="0 0 ${N} ${N}" preserveAspectRatio="none" shape-rendering="crispEdges" aria-hidden="true" fill="var(--pink)">${rects}</svg>`);
 }
 
 // ---------- folk-art cutout card ----------
@@ -652,13 +679,14 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;",
 const PX_FLOWER = `<svg class="pxflower" viewBox="0 0 3 3" shape-rendering="crispEdges" aria-hidden="true" fill="currentColor">${[[1, 0], [0, 1], [1, 1], [2, 1], [1, 2]].map(([x, y]) => `<rect x="${x + .1}" y="${y + .1}" width=".8" height=".8"/>`).join("")}</svg>`;
 const sparkles = (spots) => spots.map(([l, t, s = 30, d = 0]) => `<span class="spark" style="left:${l}%;top:${t}%;font-size:${s}px;animation-delay:${d}s">${PX_FLOWER}</span>`).join("");
 const pct = xp => Math.round((xp / XP_PER_LEVEL) * 100);
+const statsBar = () => `<div class="stats"><span>LVL ${S.level}</span><div class="bar"><i style="width:${pct(S.xp)}%"></i></div><span>${S.xp}/${XP_PER_LEVEL} XP</span></div>`;
 
 const screens = {
   home() {
     const left = S.quests.filter(q => !q.done).length;
     return `
       <div class="card">${getFolkCard()}</div>
-      <div class="stats"><span>LVL ${S.level}</span><div class="bar"><i style="width:${pct(S.xp)}%"></i></div><span>${S.xp}/${XP_PER_LEVEL} XP</span></div>
+      ${statsBar()}
       <button class="pill pixel" data-go="list" autofocus>${left ? `${left} quest${left > 1 ? "s" : ""} today` : "all done!"}</button>`;
   },
 
@@ -672,6 +700,7 @@ const screens = {
         <span class="xpv">+${q.xp} XP</span>
       </button>`).join("");
     return `
+      ${statsBar()}
       <h1 style="font-size:32px">✿ today's quests ♡</h1>
       <div class="list">${rows || '<p class="sub">No quests yet. Add one!</p>'}</div>
       <div class="row-actions">
@@ -698,7 +727,7 @@ const screens = {
   complete({ id, gained, leveled }) {
     const q = S.quests.find(q => q.id === id) || { name: "Quest", icon: "star" };
     return `
-      ${getFolkFrame(true)}
+      ${getFolkFrame("zigzag", true)}
       <div class="topbun">${getHopBunny(4)}</div>
       ${burst()}
       <p class="xp" style="margin:0">QUEST COMPLETE!</p>
@@ -709,7 +738,7 @@ const screens = {
 
   levelup({ from, to }) {
     return `
-      ${getFolkFrame()}
+      ${getFolkFrame("scallop")}
       ${burst()}
       <p class="xp" style="font-size:48px;margin:0">LEVEL UP!</p>
       ${getHopBunny()}
@@ -720,7 +749,7 @@ const screens = {
 
   achievement() {
     return `
-      ${getFolkFrame()}
+      ${getFolkFrame("vine")}
       ${burst()}
       <p class="xp" style="margin:0">all quests completed</p>
       ${getHopBunny()}
