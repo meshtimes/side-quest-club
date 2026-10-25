@@ -392,19 +392,6 @@ const ANIMATED_ICONS = {
     const seq = [["closed", 1400], ["o1", 160], ["o2", 140], ["o3", 140], ["o4", 140], ["o5", 800], ["empty", 220]];
     return frameIconSvg("ml", 16, 22, px, [], frames, seq);
   },
-  // Swings on its hook: the lower part tilts one, then two stitches each way, and the bow
-  // tails flip at the ends of the swing as if caught by the breeze.
-  hanger(px) {
-    const ox = 2, art = SPRITES.hanger;
-    const pose = dx => art.flatMap((r, y) => {
-      const shift = y < 5 ? 0 : Math.round(dx * (y - 4) / 10);
-      const row = Math.abs(dx) === 2 && y === 14 ? ".P.P.........P.P..." : r;   // tails flutter at the ends
-      return [...row].flatMap((c, x) => COLORS[c] ? [[x + ox + shift, y, c]] : []);
-    });
-    const frames = { c: pose(0), r1: pose(1), r2: pose(2), l1: pose(-1), l2: pose(-2) };
-    const seq = [["c", 500], ["r1", 150], ["r2", 260], ["r1", 150], ["c", 150], ["l1", 150], ["l2", 260], ["l1", 150]];
-    return frameIconSvg("hg", 23, 15, px, [], frames, seq);
-  },
   // Three water drops fall on the flowers, then the star, lavender and tulip perk up in turn.
   flowers(px) {
     const oy = 5, art = SPRITES.flowers;
@@ -418,19 +405,6 @@ const ANIMATED_ICONS = {
     };
     const seq = [["rest", 700], ["d1", 140], ["d2", 140], ["rest", 160], ["p1", 160], ["p2", 160], ["p3", 700]];
     return frameIconSvg("fl", 17, 15, px, [], frames, seq);
-  },
-  // Fork and spoon lean in and clink twice, with a sparkle where they touch.
-  cutlery(px) {
-    const ox = 2, oy = 4, art = SPRITES.cutlery;
-    const pose = lean => art.flatMap((r, y) => [...r].flatMap((c, x) => {
-      if (!COLORS[c]) return [];
-      const tilt = y < lean ? (x < 6 ? 1 : -1) : 0;                                 // tops of fork/spoon tip inward
-      return [[x + ox + tilt, y + oy, c]];
-    }));
-    const spark = cellsOf([".W.", "W.W", ".W."], ox + 5, 0);
-    const frames = { apart: pose(0), lean: pose(2), touch: [...pose(3), ...spark] };   // only the tips meet
-    const seq = [["apart", 800], ["lean", 110], ["touch", 260], ["lean", 110], ["apart", 260], ["lean", 110], ["touch", 260], ["lean", 110]];
-    return frameIconSvg("ct", 16, 17, px, [], frames, seq);
   },
   // The cursor glides over to the sparkle and clicks it; the sparkle pops, twinkles and settles.
   laptop(px) {
@@ -449,10 +423,10 @@ const ANIMATED_ICONS = {
     return frameIconSvg("lt", 20, 14, px, [], frames, seq);
   },
 };
-// Big icon for the quest screen: animated where we have frames, gently bouncing otherwise.
+// Big icon for the quest screen: animated where we have frames, still otherwise.
 function questIcon(name, px = 10) {
   const anim = ANIMATED_ICONS[name];
-  if (!anim) return `<div class="bounce">${sprite(name, px)}</div>`;
+  if (!anim) return `<div>${sprite(name, px)}</div>`;
   const w = Math.max(...SPRITES[name].map(r => r.length));
   return `<div>${anim(px * Math.min(1, 12 / w))}</div>`;   // same stitch size as the still sprite
 }
