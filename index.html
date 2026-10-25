@@ -320,8 +320,8 @@ const KEY = "sideQuestClub.v1";
 const today = () => new Date().toLocaleDateString("en-CA");
 function defaultState() {
   return {
-    day: today(), level: 3, xp: 65, achievements: [],
-    quests: ["Grocery shopping", "Pick up a package", "Get coffee", "Do laundry", "Reply to emails"].map(toQuest),
+    day: today(), level: 3, xp: 65, achievements: [], added: ["garden"],
+    quests: ["Grocery shopping", "Pick up a package", "Get coffee", "Do laundry", "Reply to emails", "Water plants"].map(toQuest),
   };
 }
 function load() {
@@ -329,6 +329,13 @@ function load() {
     const s = JSON.parse(localStorage.getItem(KEY));
     if (!s) return defaultState();
     s.quests.forEach(q => { q.icon = { cup: "teapot", shirt: "hanger" }[q.icon] || q.icon; });   // renamed icons: coffee → teapot, laundry → hanger
+    // Quests added to the starter list after launch go onto saved lists once (the wearer can still remove them).
+    s.added = s.added || [];
+    if (!s.added.includes("garden")) {
+      if (!s.quests.some(q => q.icon === "flowers")) s.quests.push(toQuest("Water plants"));
+      s.added.push("garden");
+      try { localStorage.setItem(KEY, JSON.stringify(s)); } catch {}
+    }
     if (s.day !== today()) { s.day = today(); s.quests.forEach(q => (q.done = false)); }  // new day, fresh quest board
     return s;
   } catch { return defaultState(); }
