@@ -232,13 +232,48 @@ const SPRITES = {
     "..PPPPPPPP..",
   ],
   mail: [
-    "WWWWWWWWWWWW",
-    "WPWPPPPPPWPW",
-    "WPPWPPPPWPPW",
-    "WPPPWPPWPPPW",
-    "WPPPPWWPPPPW",
-    "WPPPPPPPPPPW",
-    "WWWWWWWWWWWW",
+    "WWWWWWWWWWWWWWWW",
+    "WW............WW",
+    "W.W..........W.W",
+    "W..W........W..W",
+    "W...W......W...W",
+    "W....PP..PP....W",
+    "W....PPPPPP....W",
+    "W.....PPPP.....W",
+    "W......PP......W",
+    "W..............W",
+    "WWWWWWWWWWWWWWWW",
+  ],
+  laptop: [
+    "..WWWWWWWWWWWWWWWW..",
+    "..W..............W..",
+    "..W...P..........W..",
+    "..W..PPP.........W..",
+    "..W...P....P.....W..",
+    "..W........PP....W..",
+    "..W........PPP...W..",
+    "..W........PPPP..W..",
+    "..W........PP....W..",
+    "..W..........P...W..",
+    "..W..............W..",
+    "..WWWWWWWWWWWWWWWW..",
+    "WWWWWWWWWWWWWWWWWWWW",
+    ".WWWWWWWWWWWWWWWWWW.",
+  ],
+  cutlery: [
+    "P.P.P...PPP.",
+    "P.P.P..PPPPP",
+    "P.P.P..PWPPP",
+    "P.P.P..PPPPP",
+    "PPPPP..PPPPP",
+    ".PPP....PPP.",
+    "..P......P..",
+    "..P......P..",
+    "..P......P..",
+    "..P......P..",
+    ".PPP....PPP.",
+    ".PPP....PPP.",
+    "..P......P..",
   ],
   dumbbell: [
     "WW......WW..",
@@ -305,7 +340,8 @@ const QUEST_BOOK = [
   { re: /water|plant|garden|flower/i, name: "Tend the enchanted garden", xp: 20, icon: "flowers" },
   { re: /e-?mail|inbox|reply|message/i, name: "Confront the inbox demons", xp: 25, icon: "mail" },
   { re: /gym|workout|run|yoga|pilates|walk/i, name: "Train at the warriors' guild", xp: 35, icon: "dumbbell" },
-  { re: /dish|clean|tidy|vacuum/i, name: "Vanquish the dish hydra", xp: 25, icon: "plate" },
+  { re: /dish|clean|tidy|vacuum/i, name: "Vanquish the dish hydra", xp: 25, icon: "cutlery" },
+  { re: /design|figma|mockup|portfolio/i, name: "Forge the legendary design", xp: 35, icon: "laptop" },
   { re: /bill|bank|rent|tax|pay/i, name: "Pay tribute to the crown", xp: 20, icon: "coin" },
 ];
 function toQuest(errand) {
@@ -320,22 +356,23 @@ const KEY = "sideQuestClub.v1";
 const today = () => new Date().toLocaleDateString("en-CA");
 function defaultState() {
   return {
-    day: today(), level: 3, xp: 65, achievements: [], added: ["garden"],
-    quests: ["Grocery shopping", "Pick up a package", "Get coffee", "Do laundry", "Reply to emails", "Water plants"].map(toQuest),
+    day: today(), level: 3, xp: 65, achievements: [], added: ["garden", "dishes"],
+    quests: ["Grocery shopping", "Pick up a package", "Get coffee", "Do laundry", "Reply to emails", "Water plants", "Do dishes"].map(toQuest),
   };
 }
 function load() {
   try {
     const s = JSON.parse(localStorage.getItem(KEY));
     if (!s) return defaultState();
-    s.quests.forEach(q => { q.icon = { cup: "teapot", shirt: "hanger" }[q.icon] || q.icon; });   // renamed icons: coffee → teapot, laundry → hanger
+    s.quests.forEach(q => { q.icon = { cup: "teapot", shirt: "hanger", plate: "cutlery" }[q.icon] || q.icon; });   // renamed icons
     // Quests added to the starter list after launch go onto saved lists once (the wearer can still remove them).
     s.added = s.added || [];
-    if (!s.added.includes("garden")) {
-      if (!s.quests.some(q => q.icon === "flowers")) s.quests.push(toQuest("Water plants"));
-      s.added.push("garden");
+    [["garden", "Water plants", "flowers"], ["dishes", "Do dishes", "cutlery"]].forEach(([key, errand, icon]) => {
+      if (s.added.includes(key)) return;
+      if (!s.quests.some(q => q.icon === icon)) s.quests.push(toQuest(errand));
+      s.added.push(key);
       try { localStorage.setItem(KEY, JSON.stringify(s)); } catch {}
-    }
+    });
     if (s.day !== today()) { s.day = today(); s.quests.forEach(q => (q.done = false)); }  // new day, fresh quest board
     return s;
   } catch { return defaultState(); }
