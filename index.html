@@ -191,6 +191,23 @@ const SPRITES = {
     ".....PPPPPPPPP.....",
     "....PPPPPPPPPPP....",
   ],
+  hanger: [
+    "........WWW........",
+    ".......W...W.......",
+    "...........W.......",
+    "..........W........",
+    ".........W.........",
+    ".........W.........",
+    "........WWW........",
+    "......WW...WW......",
+    "....WW.......WW....",
+    "..WW...........WW..",
+    "PP.PP.........PP.PP",
+    "P.P.PWWWWWWWWWP.P.P",
+    "PP.PP.........PP.PP",
+    ".P.P...........P.P.",
+    "P...P.........P...P",
+  ],
   shirt: [
     "...PP..PP...",
     ".PPPPWWPPPP.",
@@ -272,7 +289,7 @@ const QUEST_BOOK = [
   { re: /grocer|food|market|trader|whole ?foods/i, name: "Acquire survival supplies", xp: 30, icon: "basket" },
   { re: /package|parcel|mail ?room|pick ?up|amazon|ups|fedex/i, name: "Retrieve the mysterious parcel", xp: 20, icon: "box" },
   { re: /coffee|latte|matcha|caf|\btea\b/i, name: "Obtain caffeine potion", xp: 15, icon: "teapot" },
-  { re: /laundry|wash clothes|dry ?clean/i, name: "Defeat the laundry monster", xp: 40, icon: "shirt", boss: true },
+  { re: /laundry|wash clothes|dry ?clean/i, name: "Defeat the laundry monster", xp: 40, icon: "hanger", boss: true },
   { re: /e-?mail|inbox|reply|message/i, name: "Confront the inbox demons", xp: 25, icon: "mail" },
   { re: /gym|workout|run|yoga|pilates|walk/i, name: "Train at the warriors' guild", xp: 35, icon: "dumbbell" },
   { re: /dish|clean|tidy|vacuum/i, name: "Vanquish the dish hydra", xp: 25, icon: "plate" },
@@ -298,7 +315,7 @@ function load() {
   try {
     const s = JSON.parse(localStorage.getItem(KEY));
     if (!s) return defaultState();
-    s.quests.forEach(q => { if (q.icon === "cup") q.icon = "teapot"; });   // coffee icon is now a teapot
+    s.quests.forEach(q => { q.icon = { cup: "teapot", shirt: "hanger" }[q.icon] || q.icon; });   // renamed icons: coffee → teapot, laundry → hanger
     if (s.day !== today()) { s.day = today(); s.quests.forEach(q => (q.done = false)); }  // new day, fresh quest board
     return s;
   } catch { return defaultState(); }
