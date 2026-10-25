@@ -53,9 +53,10 @@
     font-size: 24px; padding: 10px 30px; border-radius: 0;
   }
   .pill.ghost { background: none; color: var(--ink); border: 2px solid var(--line); font-size: 24px; padding: 8px 24px; }
-  /* Docs: keep a visible focus ring; browser focus is the source of truth. */
-  :where(button, a, input):focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; }
-  .pill:focus-visible { outline-color: var(--ink); }
+  /* Docs: keep a visible focus ring; browser focus is the source of truth. Uses :focus, not
+     :focus-visible, because a touchpad/Neural Band tap can count as a click and hide the ring. */
+  :where(button, a, input):focus { outline: 3px solid var(--ink); outline-offset: 4px; }
+  .pill:focus { outline-color: var(--ink); }
 
   .box { border: 2px solid var(--line); border-radius: 0; padding: 14px 18px; }
 
@@ -78,7 +79,7 @@
   .row .xpv { color: var(--pink); white-space: nowrap; }
   .check { inline-size: 24px; block-size: 24px; border: 2px solid var(--ink); border-radius: 0; display: grid; place-items: center; font-size: 16px; }
   .row.done .check { background: var(--pink); border-color: var(--pink); color: #2a0d1b; }
-  .row:focus-visible { outline-offset: 2px; }
+  .row:focus { outline-offset: 2px; }
 
   .bar { inline-size: 100%; max-inline-size: 420px; block-size: 26px; border: 2px solid var(--ink); border-radius: 0; overflow: hidden; position: relative; }
   .bar > i { position: absolute; inset: 0 auto 0 0; background: var(--pink); border-radius: 0; transition: width .9s cubic-bezier(.2,.8,.2,1); }
@@ -753,6 +754,8 @@ function render(state) {
   app.innerHTML = `<main class="screen" data-screen="${name}">${screens[name](state || {})}</main>`;
   const f = app.querySelector("[autofocus]") || app.querySelector("button, input");
   f?.focus({ preventScroll: true });
+  // Re-apply once the screen has drawn, in case the glasses' own navigation grabbed focus.
+  requestAnimationFrame(() => { if (f?.isConnected && document.activeElement !== f) f.focus({ preventScroll: true }); });
   if (name === "add") wireAdd();
 }
 
