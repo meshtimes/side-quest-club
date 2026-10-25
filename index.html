@@ -696,13 +696,13 @@ const screens = {
     return `
       ${getFolkFrame()}
       ${burst()}
-      <div class="box" style="display:flex;gap:18px;align-items:center;text-align:left">
+      <p class="xp" style="margin:0">QUEST COMPLETE!</p>
+      <div style="display:flex;gap:18px;align-items:center;text-align:left">
         <span class="done-icon">${sprite(q.icon, 4)}</span>
         <div><p class="big" style="font-size:24px">${esc(q.name.toLowerCase())}… done!</p>
         <p class="xp" style="margin:4px 0 0">+${gained} XP</p></div>
       </div>
       ${getHopBunny()}
-      <p class="tag">QUEST COMPLETE!</p>
       <button class="pill" data-next="${leveled ? "levelup" : "after"}" autofocus>${leveled ? "whoa →" : "yay ♡"}</button>`;
   },
 
