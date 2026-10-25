@@ -119,7 +119,8 @@
 
   .folkframe { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; pointer-events: none; }
   .done-icon .sprite { display: block; max-block-size: 48px; inline-size: auto; }
-  .stamp { padding: 10px; background: var(--pink); border-radius: 0; outline: 4px dashed var(--pink); outline-offset: 4px; }
+  .stamp { padding: 10px 14px; border-radius: 0; outline: 4px dashed var(--pink); outline-offset: 4px; }
+  .stamp .hopbun { display: block; }
   .tag { font-size: 16px; color: var(--dim); }
 
   /* Desktop-only frame so the 600×600 glasses view is obvious outside the glasses. */
@@ -707,9 +708,10 @@ const screens = {
 
   levelup({ from, to }) {
     return `
+      ${getFolkFrame()}
       ${burst()}
-      ${sparkles([[16, 26, 34], [82, 22, 40, .3], [10, 60, 24, .6], [88, 66, 28, .9]])}
       <p class="xp" style="font-size:48px;margin:0">LEVEL UP!</p>
+      ${getHopBunny()}
       <div class="bar"><i id="lvbar" style="width:100%"></i></div>
       <p class="big" style="font-size:40px">LVL ${from} → LVL ${to}</p>
       <button class="pill" data-next="after" autofocus>continue</button>`;
@@ -717,10 +719,10 @@ const screens = {
 
   achievement() {
     return `
+      ${getFolkFrame()}
       ${burst()}
-      ${sparkles([[14, 34], [84, 30, 34, .3], [80, 66, 24, .6], [18, 70, 20, .9]])}
       <h1 class="underline">achievement!</h1>
-      <div class="stamp">${sprite("bunny", 9)}</div>
+      <div class="stamp">${getHopBunny()}</div>
       <p class="big">Functioning Adult</p>
       <p class="sub">Completed all daily quests</p>
       <button class="pill" data-go="home" autofocus>♡</button>`;
