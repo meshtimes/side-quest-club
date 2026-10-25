@@ -50,12 +50,12 @@
   }
   .pill {
     background: var(--pink); color: #2a0d1b;
-    font-size: 30px; padding: 10px 34px; border-radius: 999px;
+    font-size: 30px; padding: 10px 34px; border-radius: 0;
   }
   .pill.ghost { background: none; color: var(--ink); border: 2px solid var(--line); font-size: 24px; padding: 6px 24px; }
   /* Docs: keep a visible focus ring; browser focus is the source of truth. */
   :where(button, a, input):focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; }
-  .pill:focus-visible { outline-color: var(--ink); box-shadow: 0 0 18px var(--pink); }
+  .pill:focus-visible { outline-color: var(--ink); }
 
   .box { border: 2px solid var(--line); border-radius: 18px; padding: 14px 18px; }
 
@@ -64,7 +64,7 @@
   .row {
     display: grid; grid-template-columns: 30px 52px 1fr auto; align-items: center; gap: 12px;
     text-align: left; font-size: 25px; line-height: 1.1;
-    border: 2px solid var(--line); border-radius: 14px; padding: 8px 14px;
+    border: 2px solid var(--line); border-radius: 0; padding: 8px 14px;
   }
   .row.done { opacity: .5; }
   .row.done .name { text-decoration: line-through; }
@@ -83,13 +83,16 @@
 
   input[type=text] {
     font: inherit; font-size: 28px; color: var(--ink); background: none;
-    border: 2px solid var(--line); border-radius: 14px; padding: 10px 16px; inline-size: 100%; max-inline-size: 440px; box-sizing: border-box;
+    border: 2px solid var(--line); border-radius: 0; padding: 10px 16px; inline-size: 100%; max-inline-size: 440px; box-sizing: border-box;
   }
   input::placeholder { color: var(--dim); }
 
   /* sparkles */
   .spark { position: absolute; color: var(--ink); font-size: 30px; animation: twinkle 1.6s ease-in-out infinite; pointer-events: none; }
-  @keyframes twinkle { 0%,100% { opacity: .25; transform: scale(.7) rotate(0); } 50% { opacity: 1; transform: scale(1.1) rotate(20deg); } }
+  /* pixel flowers blink in steps instead of rotating, so they stay crisp */
+  @keyframes twinkle { 0%,100% { opacity: .3; } 50% { opacity: 1; } }
+  .spark { animation-timing-function: steps(3, jump-none); }
+  .pxflower { display: block; inline-size: 1em; block-size: 1em; }
   .burst { position: absolute; left: 50%; top: 50%; font-size: 26px; color: var(--pink); pointer-events: none; animation: burst 1s ease-out forwards; }
   @keyframes burst { from { transform: translate(-50%,-50%) scale(.4); opacity: 1; } to { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1); opacity: 0; } }
   .bounce { animation: bounce 1.4s ease-in-out infinite; }
@@ -106,7 +109,7 @@
   .stats { display: flex; align-items: center; gap: 14px; inline-size: 100%; max-inline-size: 520px; font-size: 22px; color: var(--pink); }
   .stats .bar { block-size: 14px; border-color: var(--pink); border-radius: 0; flex: 1; }
   .stats .bar > i { border-radius: 0; }
-  .pill.pixel { font-family: "Tiny5", monospace; font-size: 24px; border-radius: 0; padding: 8px 28px; box-shadow: 4px 4px 0 #ff7eb8; }
+  .pill.pixel { font-family: "Tiny5", monospace; font-size: 24px; border-radius: 0; padding: 8px 28px; }
 
   .stamp { padding: 10px; background: var(--pink); border-radius: 6px; outline: 4px dashed var(--pink); outline-offset: 4px; }
   .tag { font-size: 22px; color: var(--dim); }
@@ -512,7 +515,9 @@ function buildFolkCard() {
 // ---------- rendering ----------
 const app = document.getElementById("app");
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const sparkles = (spots) => spots.map(([l, t, s = 30, d = 0]) => `<span class="spark" style="left:${l}%;top:${t}%;font-size:${s}px;animation-delay:${d}s">✦</span>`).join("");
+// Five-square pixel flower (a plus of stitches) used for every sparkle.
+const PX_FLOWER = `<svg class="pxflower" viewBox="0 0 3 3" shape-rendering="crispEdges" aria-hidden="true" fill="currentColor">${[[1, 0], [0, 1], [1, 1], [2, 1], [1, 2]].map(([x, y]) => `<rect x="${x + .1}" y="${y + .1}" width=".8" height=".8"/>`).join("")}</svg>`;
+const sparkles = (spots) => spots.map(([l, t, s = 30, d = 0]) => `<span class="spark" style="left:${l}%;top:${t}%;font-size:${s}px;animation-delay:${d}s">${PX_FLOWER}</span>`).join("");
 const pct = xp => Math.round((xp / XP_PER_LEVEL) * 100);
 
 const screens = {
@@ -611,7 +616,7 @@ const screens = {
 function burst() {
   return Array.from({ length: 12 }, (_, i) => {
     const a = (i / 12) * Math.PI * 2, r = 170 + (i % 3) * 30;
-    return `<span class="burst" style="--dx:${Math.cos(a) * r}px;--dy:${Math.sin(a) * r}px">${i % 2 ? "✦" : "♡"}</span>`;
+    return `<span class="burst" style="--dx:${Math.cos(a) * r}px;--dy:${Math.sin(a) * r}px">${i % 2 ? PX_FLOWER : "♡"}</span>`;
   }).join("");
 }
 
