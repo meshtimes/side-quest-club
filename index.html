@@ -332,7 +332,75 @@ const SPRITES = {
   ],
 };
 // No dark colours: the additive display can't show them (dark ≈ see-through).
-const COLORS = { P: "#ffa8cf", H: "#ff7eb8", W: "#fff4fa", D: "#ff3d97" };
+const COLORS = { P: "#ffa8cf", H: "#ff7eb8", W: "#fff4fa", D: "#ff3d97", D2: "#9c8a93" };   // D2: fading steam
+// CSS that flips between named frames: one keyframe track per frame, visible only during its
+// slots in `seq` ([[name, ms], ...]). Without animation (reduced motion) the first frame shows.
+function frameCss(prefix, scope, names, seq) {
+  const total = seq.reduce((t, [, ms]) => t + ms, 0);
+  return names.map(name => {
+    let t = 0, kf = "";
+    seq.forEach(([n, ms]) => { kf += `${(t / total * 100).toFixed(2)}%{opacity:${n === name ? 1 : 0}}`; t += ms; });
+    return `@keyframes ${prefix}-${name}{${kf}100%{opacity:${seq[0][0] === name ? 1 : 0}}}
+      ${scope} .${prefix}-${name}{opacity:${name === seq[0][0] ? 1 : 0};animation:${prefix}-${name} ${total}ms steps(1,end) infinite}`;
+  }).join("");
+}
+
+// ---------- animated icons (quest screen) ----------
+// Each is a few hand-built frames of stitches flipped like a tiny GIF; `still` stitches never change.
+const cellsOf = (rows, dx = 0, dy = 0) => rows.flatMap((r, y) => [...r].flatMap((c, x) => COLORS[c] ? [[x + dx, y + dy, c]] : []));
+function frameIconSvg(id, W, H, px, still, frames, seq) {
+  const rects = cells => cells.map(([x, y, c]) => `<rect x="${x}" y="${y}" width="1.02" height="1.02" fill="${COLORS[c]}"/>`).join("");
+  return `<svg class="sprite ${id}" aria-hidden="true" width="${Math.round(W * px)}" height="${Math.round(H * px)}" viewBox="0 0 ${W} ${H}">
+    <style>${frameCss(id, "." + id, Object.keys(frames), seq)}</style>
+    ${rects(still)}${Object.entries(frames).map(([n, cells]) => `<g class="${id}-${n}">${rects(cells)}</g>`).join("")}</svg>`;
+}
+const ANIMATED_ICONS = {
+  // Steam puffs rise from the spout one after another, then the lid rattles twice.
+  teapot(px) {
+    const ox = 2, oy = 6, lid = SPRITES.teapot.slice(0, 5), body = SPRITES.teapot.slice(5);
+    const lidAt = up => cellsOf(lid, ox, oy - up);
+    const puff = (i, dim) => { const x = 1 + (i % 2), y = 10 - 2 * i, c = dim ? "D2" : "W";
+      return [[x, y, c], [x + 1, y, c], [x, y - 1, c]]; };
+    const steam = (...stages) => stages.flatMap(([i, dim]) => puff(i, dim));
+    const frames = {
+      rest: lidAt(0),
+      s1: [...lidAt(0), ...steam([0])],
+      s2: [...lidAt(0), ...steam([1], [0])],
+      s3: [...lidAt(0), ...steam([2], [1], [0])],
+      s4: [...lidAt(0), ...steam([3], [2], [1])],
+      s5: [...lidAt(0), ...steam([4, true], [3], [2])],
+      s6: [...lidAt(0), ...steam([4, true], [3])],
+      s7: [...lidAt(0), ...steam([4, true])],
+      lidUp: lidAt(1),
+    };
+    const seq = [["rest", 700], ["s1", 140], ["s2", 140], ["s3", 140], ["s4", 140], ["s5", 140], ["s6", 140], ["s7", 140],
+                 ["rest", 420], ["lidUp", 90], ["rest", 90], ["lidUp", 90], ["rest", 500]];
+    return frameIconSvg("tp", 21, 21, px, cellsOf(body, ox, oy + 5), frames, seq);
+  },
+  // The flap folds open, the heart floats up out of the envelope and hangs there with two
+  // sparkles, then the envelope closes again.
+  mail(px) {
+    const oy = 11, closed = cellsOf(SPRITES.mail, 0, oy);
+    const open = [...cellsOf(["WWWWWWWWWWWWWWWW", ...Array(9).fill("W..............W"), "WWWWWWWWWWWWWWWW"], 0, oy),
+                  ...[...Array(7)].flatMap((_, i) => [[1 + i, oy - 1 - i, "W"], [14 - i, oy - 1 - i, "W"]])];   // flap flipped up
+    const heart = y => cellsOf(["PP..PP", "PPPPPP", ".PPPP.", "..PP.."], 5, y);
+    const sparkles = cellsOf([".W.", "W.W", ".W."], 0, 0).flatMap(([x, y, c]) => [[x + 1, y, c], [x + 12, y, c]]);
+    const frames = {
+      closed, o1: [...open, ...heart(oy + 5)], o2: [...open, ...heart(oy + 2)], o3: [...open, ...heart(oy - 2)],
+      o4: [...open, ...heart(oy - 6)], o5: [...open, ...heart(0), ...sparkles], empty: open,
+    };
+    const seq = [["closed", 1400], ["o1", 160], ["o2", 140], ["o3", 140], ["o4", 140], ["o5", 800], ["empty", 220]];
+    return frameIconSvg("ml", 16, 22, px, [], frames, seq);
+  },
+};
+// Big icon for the quest screen: animated where we have frames, gently bouncing otherwise.
+function questIcon(name, px = 10) {
+  const anim = ANIMATED_ICONS[name];
+  if (!anim) return `<div class="bounce">${sprite(name, px)}</div>`;
+  const w = Math.max(...SPRITES[name].map(r => r.length));
+  return `<div>${anim(px * Math.min(1, 12 / w))}</div>`;   // same stitch size as the still sprite
+}
+
 function sprite(name, px = 5) {
   const rows = SPRITES[name] || SPRITES.star;
   const w = Math.max(...rows.map(r => r.length)), h = rows.length;
@@ -564,15 +632,7 @@ const BUNNY_FRAMES = {
 const BUNNY_SEQ = [["idle", 520], ["crouch", 130], ["takeoff", 110], ["air", 200], ["land", 140], ["settle", 170], ["idle", 380], ["crouch", 110], ["land", 120]];
 
 // CSS that flips between bunny frames: one keyframe track per frame, visible only in its SEQ slots.
-function bunnyHopCss(prefix, scope) {
-  const total = BUNNY_SEQ.reduce((t, [, ms]) => t + ms, 0);
-  return Object.keys(BUNNY_FRAMES).map(name => {
-    let t = 0, kf = "";
-    BUNNY_SEQ.forEach(([n, ms]) => { kf += `${(t / total * 100).toFixed(2)}%{opacity:${n === name ? 1 : 0}}`; t += ms; });
-    return `@keyframes ${prefix}-${name}{${kf}100%{opacity:${BUNNY_SEQ[0][0] === name ? 1 : 0}}}
-      ${scope} .${prefix}-${name}{opacity:${name === "idle" ? 1 : 0};animation:${prefix}-${name} ${total}ms steps(1,end) infinite}`;
-  }).join("");
-}
+function bunnyHopCss(prefix, scope) { return frameCss(prefix, scope, Object.keys(BUNNY_FRAMES), BUNNY_SEQ); }
 // Stitches for each frame, standing on row `ground` with its left edge at column `bx`.
 function bunnyFrameStitches(bx, ground) {
   const out = {};
@@ -713,7 +773,7 @@ const screens = {
     if (!q) return screens.list();
     return `
       ${sparkles([[14, 30], [84, 26, 26, .4], [80, 62, 20, .9], [12, 70, 22, 1.2]])}
-      <div class="bounce">${sprite(q.icon, 10)}</div>
+      ${questIcon(q.icon)}
       <p class="big">${esc(q.name)}</p>
       <p class="sub">${esc(q.errand)} · <span class="xp" style="font-size:24px">+${q.xp} XP</span></p>
       <div class="row-actions">
