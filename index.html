@@ -97,25 +97,12 @@
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 
   /* home: pink paper card with the folk pattern cut out (holes = see-through) */
-  .screen[data-screen=home] { font-family: "Tiny5", monospace; gap: 14px; padding: 22px 30px; }
+  .screen[data-screen=home] { font-family: "Tiny5", monospace; gap: 12px; padding: 18px 30px; }
   .logo { font-family: "Tiny5", monospace; font-size: 64px; line-height: 1; color: var(--pink); margin: 0; letter-spacing: 2px; }
   .card { inline-size: 100%; max-inline-size: 540px; }
   .card svg { display: block; inline-size: 100%; block-size: auto; }
   .card .tw { animation: twinkle-hole 2.4s steps(2) infinite; }
   @keyframes twinkle-hole { 50% { opacity: .35; } }
-  /* Hop moves in whole stitches (1 SVG unit = 1 stitch) so it stays pixel-crisp. */
-  .card .hop { animation: hop 2.2s infinite; }
-  @keyframes hop {
-    0%, 50%, 100% { transform: translateY(0); animation-timing-function: steps(1, end); }
-    56% { transform: translateY(-2px); animation-timing-function: steps(1, end); }
-    62% { transform: translateY(-4px); animation-timing-function: steps(1, end); }
-    68% { transform: translateY(-5px); animation-timing-function: steps(1, end); }
-    74% { transform: translateY(-4px); animation-timing-function: steps(1, end); }
-    80% { transform: translateY(-2px); animation-timing-function: steps(1, end); }
-    86% { transform: translateY(0); animation-timing-function: steps(1, end); }
-  }
-  .card .dust { opacity: 0; animation: dust 2.2s infinite steps(1, end); }
-  @keyframes dust { 0%, 86% { opacity: 0; } 87%, 95% { opacity: 1; } 96%, 100% { opacity: 0; } }
   .stats { display: flex; align-items: center; gap: 14px; inline-size: 100%; max-inline-size: 520px; font-size: 22px; color: var(--pink); }
   .stats .bar { block-size: 14px; border-color: var(--pink); border-radius: 0; flex: 1; }
   .stats .bar > i { border-radius: 0; }
@@ -308,7 +295,7 @@ document.fonts?.load('40px "Tiny5"').then(() => {
 }).catch(() => {});
 
 function buildFolkCard() {
-  const W = 72, H = 56, g = new Set(), tw = new Set(), hop = new Set(), dust = new Set();
+  const W = 52, H = 44, g = new Set(), tw = new Set(), hop = new Set();
   const k = (x, y) => x + "," + y;
   const set = (x, y, into = g) => { if (x >= 0 && y >= 0 && x < W && y < H) into.add(k(x, y)); };
   const stamp = (rows, x0, y0, into) => rows.forEach((r, y) => [...r].forEach((c, x) => c === "#" && set(x0 + x, y0 + y, into)));
@@ -325,7 +312,6 @@ function buildFolkCard() {
     const ph = (x - 3) % 10;
     if (ph === 2) { set(x + 1, y - 1); set(x + 2, y - 2); }       // leaf up
     if (ph === 7) { set(x + 1, y + 1); set(x + 2, y + 2); }       // leaf down
-    if (ph === 5 && x < W / 2 - 6) stamp(DIAMOND, x - 1, 5);
   }
   prev = undefined;
   for (let y = 3; y < H / 2; y++) {
@@ -355,50 +341,51 @@ function buildFolkCard() {
       } }
     const u = minRun;                     // one Tiny5 pixel, in canvas pixels
     const tw_ = Math.round((x1 - x0 + 1) / u), th = Math.round((y1 - y0 + 1) / u);
-    const tx = Math.round((W - tw_) / 2), ty = 8;
+    const tx = Math.round((W - tw_) / 2), ty = 6;
     for (let j = 0; j < th; j++) for (let i = 0; i < tw_; i++)
       if (on(Math.floor(x0 + (i + 0.5) * u), Math.floor(y0 + (j + 0.5) * u))) set(tx + i, ty + j);
   } catch {}
 
-  // Leaping bunny drawn as a one-stitch outline (after a hand-drawn reference).
-  // Parts are tested back-to-front; a cell is outline when it borders empty space
-  // or a different part that lies underneath it.
-  const S = 0.09, RX = 140, RY = 215;
-  const inE = (px, py, cx, cy, rx, ry, rot = 0) => { const c = Math.cos(rot), s = Math.sin(rot), dx = px - cx, dy = py - cy;
-    const a = (dx * c + dy * s) / rx, b = (-dx * s + dy * c) / ry; return a * a + b * b <= 1; };
-  const inC = (px, py, ax, ay, bx, by, r) => { const vx = bx - ax, vy = by - ay;
-    const t = Math.max(0, Math.min(1, ((px - ax) * vx + (py - ay) * vy) / (vx * vx + vy * vy)));
-    return Math.hypot(px - ax - t * vx, py - ay - t * vy) <= r; };
-  const PARTS = [
-    { grp: "hind2", hit: (x, y) => inC(x, y, 458, 430, 498, 505, 16) },
-    { grp: "tail",  hit: (x, y) => inE(x, y, 490, 388, 22, 22) },
-    { grp: "body",  hit: (x, y) => inE(x, y, 340, 350, 158, 64, 0.4) || inE(x, y, 232, 290, 50, 46, -0.2) || inE(x, y, 440, 412, 46, 36) },
-    { grp: "hind1", hit: (x, y) => inC(x, y, 438, 438, 470, 518, 17) },
-    { grp: "front2", hit: (x, y) => inC(x, y, 232, 368, 162, 376, 15) },
-    { grp: "front1", hit: (x, y) => inC(x, y, 230, 334, 158, 344, 15) },
-    { grp: "ear2",  hit: (x, y) => inE(x, y, 336, 282, 52, 22, 0.14) },
-    { grp: "ear1",  hit: (x, y) => inE(x, y, 322, 243, 60, 24, -0.04) },
+  // Filled leaping bunny facing right, hand-placed stitches; the gaps on the head form a heart eye.
+  const BUNNY = [
+    ".........##..##.......",
+    "........###.####......",
+    "........##########....",
+    ".........##########...",
+    "...........#########..",
+    "............########..",
+    "...........##########.",
+    "...........####.#.###.",
+    "...........####...###.",
+    "..##.......#####.####.",
+    ".####....############.",
+    ".####..##############.",
+    "..##################..",
+    ".###################.#",
+    ".##########......#####",
+    "##########.......####.",
+    "#########.............",
+    ".######...............",
+    "..###.................",
   ];
-  const BW = Math.ceil(390 * S), BH = Math.ceil(330 * S);
-  const top = (cx, cy) => { const px = RX + (cx + 0.5) / S, py = RY + (cy + 0.5) / S;
-    for (let i = PARTS.length - 1; i >= 0; i--) if (PARTS[i].hit(px, py)) return i; return -1; };
-  const z = []; for (let y = -1; y <= BH; y++) { z[y] = []; for (let x = -1; x <= BW; x++) z[y][x] = top(x, y); }
-  const bx = Math.round((W - BW) / 2) + 1, by = H - BH - 5;
-  let footY = 0;
-  for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) {
-    const me = z[y][x]; if (me < 0) continue;
-    const edge = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => { const n = z[y + dy]?.[x + dx] ?? -1;
-      return n < 0 || (n < me && PARTS[n].grp !== PARTS[me].grp); });
-    if (edge) { set(bx + x, by + y, hop); footY = Math.max(footY, y); }
-  }
-  set(bx + Math.round((222 - RX) * S), by + Math.round((278 - RY) * S), hop);   // eye
-  // dust puffs under the hind feet, shown on landing
-  const fx = bx + Math.round((485 - RX) * S);
-  [[-3, 1], [-4, 0], [3, 1], [4, 0], [-2, 2], [2, 2]].forEach(([dx, dy]) => set(fx + dx, by + footY + dy - 1, dust));
+  const BW = BUNNY[0].length, BH = BUNNY.length;
+  // Hop lane: inside the border, under the title. The bunny starts just off the left edge.
+  const laneL = 7, laneR = W - 7, laneT = 15, laneB = H - 5;
+  const bx = laneL - BW, by = laneB - BH;
+  BUNNY.forEach((r, y) => [...r].forEach((c, x) => c === "#" && hop.add(k(bx + x, by + y))));   // may start off-card; the lane clip hides it
 
-  // Twinkling sparkles in the negative space
+  // Hop path: arcs of whole stitches left → right, then a short pause off-stage.
+  const ARC = [[1, -2], [2, -3], [3, -3], [4, -2], [5, 0], [5, 0]], frames = [];
+  for (let x0 = 0; x0 < laneR - laneL + BW; x0 += 5) ARC.forEach(([dx, dy]) => frames.push([x0 + dx, dy]));
+  for (let i = 0; i < 6; i++) frames.push(frames[frames.length - 1]);
+  const kf = frames.map(([x, y], i) => `${(i / frames.length * 100).toFixed(2)}%{transform:translate(${x}px,${y}px)}`).join("");
+  const hopCss = `@keyframes bunnyhop{${kf}100%{transform:translate(0,0)}}
+    .card .hop{animation:bunnyhop ${(frames.length * 0.11).toFixed(2)}s steps(1,end) infinite}
+    @media (prefers-reduced-motion: reduce){.card .hop{transform:translate(${BW + Math.round((laneR - laneL - BW) / 2)}px,0)}}`;
+
+  // Twinkling sparkles beside the title
   const SPARK = [".#.", "#.#", ".#."];
-  [[10, 20], [W - 13, 20], [9, H - 16], [W - 12, H - 16]].forEach(([x, y]) => stamp(SPARK, x, y, tw));
+  [[7, 9], [W - 10, 9]].forEach(([x, y]) => stamp(SPARK, x, y, tw));
 
   const pad = 2, VW = W + pad * 2, VH = H + pad * 2, gap = 0.12;
   const holes = s => [...s].map(p => { const [x, y] = p.split(",").map(Number);
@@ -407,9 +394,11 @@ function buildFolkCard() {
     <defs>
       <linearGradient id="paperTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb8d8"/><stop offset="1" stop-color="#ffa3cc"/></linearGradient>
       <linearGradient id="paperBot" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f293bf"/><stop offset="1" stop-color="#ffaed3"/></linearGradient>
+      <style>${hopCss}</style>
+      <clipPath id="lane"><rect x="${laneL + pad}" y="${laneT + pad - 4}" width="${laneR - laneL}" height="${laneB - laneT + 4}"/></clipPath>
       <mask id="cut" maskUnits="userSpaceOnUse" x="0" y="0" width="${VW}" height="${VH}">
         <rect width="${VW}" height="${VH}" fill="#fff"/>
-        <g fill="#000">${holes(g)}<g class="tw">${holes(tw)}</g><g class="hop">${holes(hop)}</g><g class="dust">${holes(dust)}</g></g>
+        <g fill="#000">${holes(g)}<g class="tw">${holes(tw)}</g><g clip-path="url(#lane)"><g class="hop">${holes(hop)}</g></g></g>
       </mask>
     </defs>
     <g mask="url(#cut)">
