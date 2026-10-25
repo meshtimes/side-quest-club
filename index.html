@@ -171,6 +171,23 @@ const SPRITES = {
     "...PPPPPP...",
     "....PPPP....",
   ],
+  teapot: [
+    "........PPP........",
+    ".........P.........",
+    "......PPPPPPP......",
+    ".....PPPPPPPPP.....",
+    "....PPPPPPPPPPP....",
+    "...................",
+    "P...PPPPPPPPPPP.PP.",
+    "PP.PPPPPPPPPPPPP..P",
+    ".PPPPP.PPP.PPPPP..P",
+    "..PPP.P.P.P.PPPP..P",
+    "..PPPP.P.P.P.PPP.P.",
+    "...PPPP.P.P.P.PPP..",
+    "....PPPP.PPP.PP....",
+    ".....PPPPPPPPP.....",
+    "....PPPPPPPPPPP....",
+  ],
   shirt: [
     "...PP..PP...",
     ".PPPPWWPPPP.",
@@ -239,6 +256,7 @@ const COLORS = { P: "#ffa8cf", H: "#ff7eb8", W: "#fff4fa", D: "#ff3d97" };
 function sprite(name, px = 5) {
   const rows = SPRITES[name] || SPRITES.star;
   const w = Math.max(...rows.map(r => r.length)), h = rows.length;
+  px *= Math.min(1, 12 / w);
   let rects = "";
   rows.forEach((r, y) => [...r].forEach((c, x) => {
     if (COLORS[c]) rects += `<rect x="${x}" y="${y}" width="1.02" height="1.02" fill="${COLORS[c]}"/>`;
@@ -250,7 +268,7 @@ function sprite(name, px = 5) {
 const QUEST_BOOK = [
   { re: /grocer|food|market|trader|whole ?foods/i, name: "Acquire survival supplies", xp: 30, icon: "basket" },
   { re: /package|parcel|mail ?room|pick ?up|amazon|ups|fedex/i, name: "Retrieve the mysterious parcel", xp: 20, icon: "box" },
-  { re: /coffee|latte|matcha|caf/i, name: "Obtain caffeine potion", xp: 15, icon: "cup" },
+  { re: /coffee|latte|matcha|caf|\btea\b/i, name: "Obtain caffeine potion", xp: 15, icon: "teapot" },
   { re: /laundry|wash clothes|dry ?clean/i, name: "Defeat the laundry monster", xp: 40, icon: "shirt", boss: true },
   { re: /e-?mail|inbox|reply|message/i, name: "Confront the inbox demons", xp: 25, icon: "mail" },
   { re: /gym|workout|run|yoga|pilates|walk/i, name: "Train at the warriors' guild", xp: 35, icon: "dumbbell" },
@@ -277,6 +295,7 @@ function load() {
   try {
     const s = JSON.parse(localStorage.getItem(KEY));
     if (!s) return defaultState();
+    s.quests.forEach(q => { if (q.icon === "cup") q.icon = "teapot"; });   // coffee icon is now a teapot
     if (s.day !== today()) { s.day = today(); s.quests.forEach(q => (q.done = false)); }  // new day, fresh quest board
     return s;
   } catch { return defaultState(); }
