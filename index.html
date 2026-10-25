@@ -843,7 +843,7 @@ const screens = {
       ${burst()}
       <p class="xp" style="margin:0">all quests completed</p>
       ${getHopBunny()}
-      <button class="pill" data-go="home" autofocus>♡</button>`;
+      <button class="pill" data-addmore autofocus>+ add more tasks</button>`;
   },
 
   add() {
@@ -924,6 +924,10 @@ app.addEventListener("click", e => {
   const d = b.dataset;
   if (d.go === "home") return goHome();
   if (d.go) return go({ screen: d.go, id: d.id });
+  if ("addmore" in d) {   // swap this celebration for the list underneath, so Back/Add from the form lands there
+    history.replaceState({ screen: "list", d: (history.state || {}).d || 0 }, "");
+    return go({ screen: "add" });
+  }
   if (d.complete) return complete(d.complete);
   if (d.undo) { const q = S.quests.find(q => q.id === d.undo); q.done = false; S.xp = Math.max(0, S.xp - q.xp); save(); return go({ screen: "detail", id: q.id }, { replace: true }); }
   if (d.remove) { S.quests = S.quests.filter(q => q.id !== d.remove); save(); return history.back(); }
