@@ -295,7 +295,7 @@ document.fonts?.load('40px "Tiny5"').then(() => {
 }).catch(() => {});
 
 function buildFolkCard() {
-  const W = 52, H = 44, g = new Set(), tw = new Set(), hop = new Set();
+  const W = 52, H = 44, g = new Set(), tw = new Set();
   const k = (x, y) => x + "," + y;
   const set = (x, y, into = g) => { if (x >= 0 && y >= 0 && x < W && y < H) into.add(k(x, y)); };
   const stamp = (rows, x0, y0, into) => rows.forEach((r, y) => [...r].forEach((c, x) => c === "#" && set(x0 + x, y0 + y, into)));
@@ -346,42 +346,123 @@ function buildFolkCard() {
       if (on(Math.floor(x0 + (i + 0.5) * u), Math.floor(y0 + (j + 0.5) * u))) set(tx + i, ty + j);
   } catch {}
 
-  // Filled leaping bunny facing right, hand-placed stitches; the gaps on the head form a heart eye.
-  const BUNNY = [
-    ".........##..##.......",
-    "........###.####......",
-    "........##########....",
-    ".........##########...",
-    "...........#########..",
-    "............########..",
-    "...........##########.",
-    "...........####.#.###.",
-    "...........####...###.",
-    "..##.......#####.####.",
-    ".####....############.",
-    ".####..##############.",
-    "..##################..",
-    ".###################.#",
-    ".##########......#####",
-    "##########.......####.",
-    "#########.............",
-    ".######...............",
-    "..###.................",
-  ];
-  const BW = BUNNY[0].length, BH = BUNNY.length;
-  // Hop lane: inside the border, under the title. The bunny starts just off the left edge.
-  const laneL = 7, laneR = W - 7, laneT = 15, laneB = H - 5;
-  const bx = laneL - BW, by = laneB - BH;
-  BUNNY.forEach((r, y) => [...r].forEach((c, x) => c === "#" && hop.add(k(bx + x, by + y))));   // may start off-card; the lane clip hides it
-
-  // Hop path: arcs of whole stitches left → right, then a short pause off-stage.
-  const ARC = [[1, -2], [2, -3], [3, -3], [4, -2], [5, 0], [5, 0]], frames = [];
-  for (let x0 = 0; x0 < laneR - laneL + BW; x0 += 5) ARC.forEach(([dx, dy]) => frames.push([x0 + dx, dy]));
-  for (let i = 0; i < 6; i++) frames.push(frames[frames.length - 1]);
-  const kf = frames.map(([x, y], i) => `${(i / frames.length * 100).toFixed(2)}%{transform:translate(${x}px,${y}px)}`).join("");
-  const hopCss = `@keyframes bunnyhop{${kf}100%{transform:translate(0,0)}}
-    .card .hop{animation:bunnyhop ${(frames.length * 0.11).toFixed(2)}s steps(1,end) infinite}
-    @media (prefers-reduced-motion: reduce){.card .hop{transform:translate(${BW + Math.round((laneR - laneL - BW) / 2)}px,0)}}`;
+  // Sitting bunny (stitch-for-stitch from the chart), animated frame by frame in place:
+  // idle → crouch → takeoff → air → land → settle. Each frame is its own group of holes
+  // and CSS flips which one is visible; the sprite never moves sideways.
+  const FRAMES = {
+    idle: { lift: 0, rows: [
+      "..#............",
+      "..##...........",
+      "..##....##.....",
+      "...##..##......",
+      "....#.##.......",
+      "..####.........",
+      ".#####..###....",
+      "##.#########...",
+      "#############..",
+      ".#############.",
+      "...############",
+      "...###########.",
+      "...####..####..",
+      "..###..#####...",
+      ".###..#####....",
+    ] },
+    crouch: { lift: 0, rows: [
+      ".#.............",
+      ".##......##....",
+      "..##....##.....",
+      "...##..##......",
+      "....#.##.......",
+      "..####.........",
+      ".#####..###....",
+      "##.#########...",
+      "#############..",
+      ".#############.",
+      "...############",
+      "...####..####..",
+      ".####..######..",
+      "###..#######...",
+    ] },
+    takeoff: { lift: 0, rows: [
+      "...#...........",
+      "...##....#.....",
+      "...##...##.....",
+      "...##..##......",
+      "....#.##.......",
+      "..####.........",
+      ".#####..###....",
+      "##.#########...",
+      "#############..",
+      ".#############.",
+      "...############",
+      "...###########.",
+      "...###########.",
+      ".##.###..####..",
+      "........#####..",
+      ".........####..",
+    ] },
+    air: { lift: 3, rows: [
+      "..##.....##....",
+      "...##..##......",
+      "....#.##.......",
+      "..####.........",
+      ".#####..###....",
+      "##.#########...",
+      "#############..",
+      ".#############.",
+      "...############",
+      "...###########.",
+      "##.####..####..",
+      "...##....######",
+      "..........###..",
+    ] },
+    land: { lift: 0, rows: [
+      ".##.......##...",
+      "..##.....##....",
+      "...##..##......",
+      "....#.##.......",
+      "..####.........",
+      ".#####..###....",
+      "##.#########...",
+      "#############..",
+      "...############",
+      "...####..####..",
+      ".###..######...",
+      "###..#######...",
+    ] },
+    settle: { lift: 0, rows: [
+      "...#...........",
+      "...##....#.....",
+      "...##...##.....",
+      "...##..##......",
+      "....#.##.......",
+      "..####.........",
+      ".#####..###....",
+      "##.#########...",
+      "#############..",
+      ".#############.",
+      "...############",
+      "...###########.",
+      "...####..####..",
+      "..###..#####...",
+      ".###..#####....",
+    ] },
+  };
+  const SEQ = [["idle", 520], ["crouch", 130], ["takeoff", 110], ["air", 200], ["land", 140], ["settle", 170], ["idle", 380], ["crouch", 110], ["land", 120]];
+  const BW = 15, bx = Math.round((W - BW) / 2), ground = H - 10;
+  const frameHoles = {};
+  Object.entries(FRAMES).forEach(([name, f]) => {
+    const s = (frameHoles[name] = new Set()), top = ground - f.lift - f.rows.length + 1;
+    f.rows.forEach((r, y) => [...r].forEach((c, x) => c === "#" && s.add(k(bx + x, top + y))));
+  });
+  // One keyframe track per frame: visible only during its slots in SEQ.
+  const total = SEQ.reduce((t, [, ms]) => t + ms, 0);
+  const hopCss = Object.keys(FRAMES).map(name => {
+    let t = 0, kf = "";
+    SEQ.forEach(([n, ms]) => { kf += `${(t / total * 100).toFixed(2)}%{opacity:${n === name ? 1 : 0}}`; t += ms; });
+    return `@keyframes bun-${name}{${kf}100%{opacity:${SEQ[0][0] === name ? 1 : 0}}}
+      .card .bun-${name}{opacity:${name === "idle" ? 1 : 0};animation:bun-${name} ${total}ms steps(1,end) infinite}`;
+  }).join("");
 
   // Twinkling sparkles beside the title
   const SPARK = [".#.", "#.#", ".#."];
@@ -395,10 +476,9 @@ function buildFolkCard() {
       <linearGradient id="paperTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb8d8"/><stop offset="1" stop-color="#ffa3cc"/></linearGradient>
       <linearGradient id="paperBot" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f293bf"/><stop offset="1" stop-color="#ffaed3"/></linearGradient>
       <style>${hopCss}</style>
-      <clipPath id="lane"><rect x="${laneL + pad}" y="${laneT + pad - 4}" width="${laneR - laneL}" height="${laneB - laneT + 4}"/></clipPath>
       <mask id="cut" maskUnits="userSpaceOnUse" x="0" y="0" width="${VW}" height="${VH}">
         <rect width="${VW}" height="${VH}" fill="#fff"/>
-        <g fill="#000">${holes(g)}<g class="tw">${holes(tw)}</g><g clip-path="url(#lane)"><g class="hop">${holes(hop)}</g></g></g>
+        <g fill="#000">${holes(g)}<g class="tw">${holes(tw)}</g>${Object.entries(frameHoles).map(([n, h]) => `<g class="bun-${n}">${holes(h)}</g>`).join("")}</g>
       </mask>
     </defs>
     <g mask="url(#cut)">
