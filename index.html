@@ -99,10 +99,23 @@
   /* home: pink paper card with the folk pattern cut out (holes = see-through) */
   .screen[data-screen=home] { font-family: "Tiny5", monospace; gap: 14px; padding: 22px 30px; }
   .logo { font-family: "Tiny5", monospace; font-size: 64px; line-height: 1; color: var(--pink); margin: 0; letter-spacing: 2px; }
-  .card { inline-size: 100%; max-inline-size: 520px; }
+  .card { inline-size: 100%; max-inline-size: 540px; }
   .card svg { display: block; inline-size: 100%; block-size: auto; }
   .card .tw { animation: twinkle-hole 2.4s steps(2) infinite; }
   @keyframes twinkle-hole { 50% { opacity: .35; } }
+  /* Hop moves in whole stitches (1 SVG unit = 1 stitch) so it stays pixel-crisp. */
+  .card .hop { animation: hop 2.2s infinite; }
+  @keyframes hop {
+    0%, 50%, 100% { transform: translateY(0); animation-timing-function: steps(1, end); }
+    56% { transform: translateY(-2px); animation-timing-function: steps(1, end); }
+    62% { transform: translateY(-4px); animation-timing-function: steps(1, end); }
+    68% { transform: translateY(-5px); animation-timing-function: steps(1, end); }
+    74% { transform: translateY(-4px); animation-timing-function: steps(1, end); }
+    80% { transform: translateY(-2px); animation-timing-function: steps(1, end); }
+    86% { transform: translateY(0); animation-timing-function: steps(1, end); }
+  }
+  .card .dust { opacity: 0; animation: dust 2.2s infinite steps(1, end); }
+  @keyframes dust { 0%, 86% { opacity: 0; } 87%, 95% { opacity: 1; } 96%, 100% { opacity: 0; } }
   .stats { display: flex; align-items: center; gap: 14px; inline-size: 100%; max-inline-size: 520px; font-size: 22px; color: var(--pink); }
   .stats .bar { block-size: 14px; border-color: var(--pink); border-radius: 0; flex: 1; }
   .stats .bar > i { border-radius: 0; }
@@ -286,87 +299,117 @@ let S = load();
 
 // ---------- folk-art cutout card ----------
 // A W×H stitch grid: every set cell becomes a hole punched through the pink paper.
-const FOLK_CARD = (() => {
-  const W = 64, H = 40, g = new Set(), tw = new Set();
+// Built lazily because the "questie" title is rasterised from the Tiny5 web font.
+let folkCard = null;
+function getFolkCard() { return folkCard || (folkCard = buildFolkCard()); }
+document.fonts?.load('40px "Tiny5"').then(() => {
+  folkCard = null;
+  if ((history.state || {}).screen === "home") render(history.state);
+}).catch(() => {});
+
+function buildFolkCard() {
+  const W = 72, H = 56, g = new Set(), tw = new Set(), hop = new Set(), dust = new Set();
   const k = (x, y) => x + "," + y;
   const set = (x, y, into = g) => { if (x >= 0 && y >= 0 && x < W && y < H) into.add(k(x, y)); };
   const stamp = (rows, x0, y0, into) => rows.forEach((r, y) => [...r].forEach((c, x) => c === "#" && set(x0 + x, y0 + y, into)));
 
-  // Border: a wavy vine with leaves and diamond flowers along the top and left,
-  // then mirrored on both axes so the frame is perfectly symmetric.
-  const wave = t => Math.round(1.4 * Math.sin((t / 12) * Math.PI * 2));
-  const LEAF_UP = ["...##", "..###", ".###.", "##..."], LEAF_DN = ["##...", ".###.", "..###", "...##"];
-  const LEAF_L = ["#...", "##..", ".##.", ".###", "..##"], LEAF_R = ["...#", "..##", ".##.", "###.", "##.."];
-  const DIAMOND = ["..#..", ".###.", "##.##", ".###.", "..#.."];
-  const FLOWER = ["...##...", "..####..", ".##..##.", "###..###", ".##..##.", "..####..", "...##..."];
-  const CORNER = ["##...", "##.#.", "..#..", ".#.##", "...##"];
+  // Border: a fine single-stitch vine with tiny leaves along the top and left,
+  // mirrored on both axes so the frame is symmetric.
+  const wave = t => Math.round(Math.sin((t / 10) * Math.PI * 2));
+  const DIAMOND = [".#.", "#.#", ".#."];
+  const FLOWER = ["..#..", ".#.#.", "#...#", ".#.#.", "..#.."];
   let prev;
-  for (let x = 5; x < W / 2; x++) {
-    const y = 4 + wave(x - 5);
+  for (let x = 3; x < W / 2; x++) {
+    const y = 2 + wave(x - 3);
     set(x, y); if (prev !== undefined && Math.abs(prev - y) > 1) set(x, (prev + y) >> 1); prev = y;
-    const ph = (x - 5) % 12;
-    if (ph === 3) { stamp(LEAF_UP, x, y - 4); set(x - 2, y + 2); }
-    if (ph === 9) { stamp(LEAF_DN, x - 1, y + 1); set(x + 1, y - 2); set(x + 2, y - 3); }
-    if (ph === 7 && x < 24) stamp(DIAMOND, x - 2, 8);
+    const ph = (x - 3) % 10;
+    if (ph === 2) { set(x + 1, y - 1); set(x + 2, y - 2); }       // leaf up
+    if (ph === 7) { set(x + 1, y + 1); set(x + 2, y + 2); }       // leaf down
+    if (ph === 5 && x < W / 2 - 6) stamp(DIAMOND, x - 1, 5);
   }
   prev = undefined;
-  for (let y = 5; y < H / 2; y++) {
-    const x = 4 + wave(y - 5);
+  for (let y = 3; y < H / 2; y++) {
+    const x = 2 + wave(y - 3);
     set(x, y); if (prev !== undefined && Math.abs(prev - x) > 1) set((prev + x) >> 1, y); prev = x;
-    const ph = (y - 5) % 12;
-    if (ph === 3) { stamp(LEAF_L, x - 4, y); set(x + 2, y - 2); }
-    if (ph === 9) { stamp(LEAF_R, x + 1, y - 1); set(x - 2, y + 1); }
+    const ph = (y - 3) % 10;
+    if (ph === 2) { set(x - 1, y + 1); set(x - 2, y + 2); }
+    if (ph === 7) { set(x + 1, y + 1); set(x + 2, y + 2); }
+    if (ph === 5 && y < H / 2 - 6) stamp(DIAMOND, 5, y - 1);
   }
-  stamp(CORNER, 0, 0);
-  stamp(DIAMOND, 6, 6);
-  stamp(FLOWER, W / 2 - 4, 0);
+  stamp(["#.#", ".#.", "#.#"], 0, 0);
+  stamp(FLOWER, W / 2 - 3, 0);
   stamp(FLOWER, 0, H / 2 - 3);
   [...g].forEach(p => { const [x, y] = p.split(",").map(Number); set(W - 1 - x, y); set(x, H - 1 - y); set(W - 1 - x, H - 1 - y); });
 
-  // Crouching bunny facing right, built from ellipses; ears are separated from the
-  // body by a one-stitch gap so they read as outlines, like a filet-crochet motif.
-  const B = new Set(), bx = 18, by = 12;
-  const ell = (cx, cy, rx, ry, rot = 0) => {
-    const out = new Set(), c = Math.cos(rot), s = Math.sin(rot);
-    for (let y = -2; y < 20; y++) for (let x = -2; x < 32; x++) {
-      const dx = x - cx, dy = y - cy, u = (dx * c + dy * s) / rx, v = (-dx * s + dy * c) / ry;
-      if (u * u + v * v <= 1) out.add(k(x, y));
-    }
-    return out;
-  };
-  const add = s => s.forEach(p => B.add(p));
-  const carve = ear => {   // drop neighbours of the ear so a gap outlines it
-    B.forEach(p => { if (ear.has(p)) return; const [x, y] = p.split(",").map(Number);
-      if (ear.has(k(x + 1, y)) || ear.has(k(x - 1, y)) || ear.has(k(x, y + 1)) || ear.has(k(x, y - 1))) B.delete(p); });
-    add(ear);
-  };
-  // Hollow ear: an outlined lobe lying back along the spine
-  const ear = (cx, cy, rx, ry, rot) => { const o = ell(cx, cy, rx, ry, rot), i = ell(cx, cy, rx - 2, ry - 1.1, rot); i.forEach(p => o.delete(p)); return o; };
-  add(ell(10.5, 12.5, 10, 5));         // body
-  add(ell(0.6, 10.5, 1.6, 1.6));       // tail
-  add(ell(7, 17.3, 4.6, 1.1));         // hind foot
-  add(ell(24.5, 16.8, 3, 1));          // front paw
-  const head = ell(21.5, 10, 5.2, 4.6); ell(26, 11.6, 1.8, 1.5).forEach(p => head.add(p));  // head + snout
-  carve(head);
-  carve(ear(13.5, 5.6, 8.5, 2.1, 0.32));
-  carve(ear(13.5, 2.6, 8.5, 2.1, 0.24));
-  B.delete(k(23, 9)); B.delete(k(24, 9)); B.delete(k(23, 10));   // eye (left as paper)
-  B.forEach(p => { const [x, y] = p.split(",").map(Number); set(bx + x, by + y); });
+  // Title: rasterise "questie" in Tiny5 so each font pixel becomes one stitch.
+  try {
+    const cv = document.createElement("canvas"), F = 80; cv.width = 900; cv.height = 160;
+    const cx = cv.getContext("2d", { willReadFrequently: true });
+    cx.font = `${F}px "Tiny5", monospace`; cx.textBaseline = "top"; cx.fillText("questie", 10, 10);
+    const d = cx.getImageData(0, 0, cv.width, cv.height).data, on = (x, y) => d[(y * cv.width + x) * 4 + 3] > 128;
+    let minRun = Infinity, x0 = 1e9, y0 = 1e9, x1 = 0, y1 = 0;
+    for (let y = 0; y < cv.height; y++) { let run = 0;
+      for (let x = 0; x <= cv.width; x++) {
+        if (x < cv.width && on(x, y)) { run++; x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+        else if (run) { minRun = Math.min(minRun, run); run = 0; }
+      } }
+    const u = minRun;                     // one Tiny5 pixel, in canvas pixels
+    const tw_ = Math.round((x1 - x0 + 1) / u), th = Math.round((y1 - y0 + 1) / u);
+    const tx = Math.round((W - tw_) / 2), ty = 8;
+    for (let j = 0; j < th; j++) for (let i = 0; i < tw_; i++)
+      if (on(Math.floor(x0 + (i + 0.5) * u), Math.floor(y0 + (j + 0.5) * u))) set(tx + i, ty + j);
+  } catch {}
+
+  // Leaping bunny drawn as a one-stitch outline (after a hand-drawn reference).
+  // Parts are tested back-to-front; a cell is outline when it borders empty space
+  // or a different part that lies underneath it.
+  const S = 0.09, RX = 140, RY = 215;
+  const inE = (px, py, cx, cy, rx, ry, rot = 0) => { const c = Math.cos(rot), s = Math.sin(rot), dx = px - cx, dy = py - cy;
+    const a = (dx * c + dy * s) / rx, b = (-dx * s + dy * c) / ry; return a * a + b * b <= 1; };
+  const inC = (px, py, ax, ay, bx, by, r) => { const vx = bx - ax, vy = by - ay;
+    const t = Math.max(0, Math.min(1, ((px - ax) * vx + (py - ay) * vy) / (vx * vx + vy * vy)));
+    return Math.hypot(px - ax - t * vx, py - ay - t * vy) <= r; };
+  const PARTS = [
+    { grp: "hind2", hit: (x, y) => inC(x, y, 458, 430, 498, 505, 16) },
+    { grp: "tail",  hit: (x, y) => inE(x, y, 490, 388, 22, 22) },
+    { grp: "body",  hit: (x, y) => inE(x, y, 340, 350, 158, 64, 0.4) || inE(x, y, 232, 290, 50, 46, -0.2) || inE(x, y, 440, 412, 46, 36) },
+    { grp: "hind1", hit: (x, y) => inC(x, y, 438, 438, 470, 518, 17) },
+    { grp: "front2", hit: (x, y) => inC(x, y, 232, 368, 162, 376, 15) },
+    { grp: "front1", hit: (x, y) => inC(x, y, 230, 334, 158, 344, 15) },
+    { grp: "ear2",  hit: (x, y) => inE(x, y, 336, 282, 52, 22, 0.14) },
+    { grp: "ear1",  hit: (x, y) => inE(x, y, 322, 243, 60, 24, -0.04) },
+  ];
+  const BW = Math.ceil(390 * S), BH = Math.ceil(330 * S);
+  const top = (cx, cy) => { const px = RX + (cx + 0.5) / S, py = RY + (cy + 0.5) / S;
+    for (let i = PARTS.length - 1; i >= 0; i--) if (PARTS[i].hit(px, py)) return i; return -1; };
+  const z = []; for (let y = -1; y <= BH; y++) { z[y] = []; for (let x = -1; x <= BW; x++) z[y][x] = top(x, y); }
+  const bx = Math.round((W - BW) / 2) + 1, by = H - BH - 5;
+  let footY = 0;
+  for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) {
+    const me = z[y][x]; if (me < 0) continue;
+    const edge = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => { const n = z[y + dy]?.[x + dx] ?? -1;
+      return n < 0 || (n < me && PARTS[n].grp !== PARTS[me].grp); });
+    if (edge) { set(bx + x, by + y, hop); footY = Math.max(footY, y); }
+  }
+  set(bx + Math.round((222 - RX) * S), by + Math.round((278 - RY) * S), hop);   // eye
+  // dust puffs under the hind feet, shown on landing
+  const fx = bx + Math.round((485 - RX) * S);
+  [[-3, 1], [-4, 0], [3, 1], [4, 0], [-2, 2], [2, 2]].forEach(([dx, dy]) => set(fx + dx, by + footY + dy - 1, dust));
 
   // Twinkling sparkles in the negative space
-  const SPARK = [".#.", "###", ".#."];
-  [[11, 13], [50, 13], [10, 26], [51, 26]].forEach(([x, y]) => stamp(SPARK, x, y, tw));
+  const SPARK = [".#.", "#.#", ".#."];
+  [[10, 20], [W - 13, 20], [9, H - 16], [W - 12, H - 16]].forEach(([x, y]) => stamp(SPARK, x, y, tw));
 
   const pad = 2, VW = W + pad * 2, VH = H + pad * 2, gap = 0.12;
-  const holes = (s, cls = "") => [...s].map(p => { const [x, y] = p.split(",").map(Number);
-    return `<rect ${cls} x="${x + pad + gap}" y="${y + pad + gap}" width="${1 - gap * 2}" height="${1 - gap * 2}"/>`; }).join("");
-  return `<svg viewBox="0 0 ${VW} ${VH}" shape-rendering="crispEdges" role="img" aria-label="pink paper card with a pixel folk-art bunny cut out">
+  const holes = s => [...s].map(p => { const [x, y] = p.split(",").map(Number);
+    return `<rect x="${x + pad + gap}" y="${y + pad + gap}" width="${1 - gap * 2}" height="${1 - gap * 2}"/>`; }).join("");
+  return `<svg viewBox="0 0 ${VW} ${VH}" shape-rendering="crispEdges" role="img" aria-label="questie: pink paper card with a hopping pixel bunny cut out">
     <defs>
       <linearGradient id="paperTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb8d8"/><stop offset="1" stop-color="#ffa3cc"/></linearGradient>
       <linearGradient id="paperBot" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f293bf"/><stop offset="1" stop-color="#ffaed3"/></linearGradient>
       <mask id="cut" maskUnits="userSpaceOnUse" x="0" y="0" width="${VW}" height="${VH}">
         <rect width="${VW}" height="${VH}" fill="#fff"/>
-        <g fill="#000">${holes(g)}<g class="tw">${holes(tw)}</g></g>
+        <g fill="#000">${holes(g)}<g class="tw">${holes(tw)}</g><g class="hop">${holes(hop)}</g><g class="dust">${holes(dust)}</g></g>
       </mask>
     </defs>
     <g mask="url(#cut)">
@@ -376,7 +419,7 @@ const FOLK_CARD = (() => {
       <rect y="${VH / 2}" width="${VW}" height="0.1" fill="#ffd1e6"/>
     </g>
   </svg>`;
-})();
+}
 
 // ---------- rendering ----------
 const app = document.getElementById("app");
@@ -388,8 +431,7 @@ const screens = {
   home() {
     const left = S.quests.filter(q => !q.done).length;
     return `
-      <h1 class="logo">questie</h1>
-      <div class="card">${FOLK_CARD}</div>
+      <div class="card">${getFolkCard()}</div>
       <div class="stats"><span>LVL ${S.level}</span><div class="bar"><i style="width:${pct(S.xp)}%"></i></div><span>${S.xp}/${XP_PER_LEVEL} XP</span></div>
       <button class="pill pixel" data-go="list" autofocus>${left ? `${left} quest${left > 1 ? "s" : ""} today` : "all done!"}</button>`;
   },
