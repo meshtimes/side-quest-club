@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>questie glasses preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
+<style>
+  :root { --pink: #ffa8cf; --ink: #f4eef1; --dim: #8d8790; --panel: #161518; --line: #2a282d; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #0b0b0c; color: var(--ink); font: 14px/1.4 system-ui, sans-serif; }
+  body { min-height: 100vh; display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 18px 16px 28px; }
+  h1 { font: 400 20px "Tiny5", monospace; color: var(--pink); margin: 0; letter-spacing: 1px; }
+  h1 span { color: var(--dim); }
+
+  /* ---------- the view through the glasses ---------- */
+  .stage { position: relative; inline-size: min(100%, 1180px); aspect-ratio: 16 / 9; overflow: hidden; border-radius: 6px; background: #000; }
+  .bg { position: absolute; inset: -4%; background: center / cover no-repeat; }
+  .bg.soft { filter: blur(16px) brightness(.85); }
+  /* sharp only in the middle of the lens, so the edges fall off into blur like real optics */
+  .bg.sharp { -webkit-mask-image: radial-gradient(ellipse 40% 44% at 50% 50%, #000 60%, transparent 100%);
+              mask-image: radial-gradient(ellipse 40% 44% at 50% 50%, #000 60%, transparent 100%); }
+  .walking .bg { animation: walk 14s ease-in-out infinite alternate; }
+  @keyframes walk { from { transform: scale(1) translate(0, 0); } 50% { transform: scale(1.05) translate(-.6%, .4%); } to { transform: scale(1.09) translate(.5%, -.3%); } }
+
+  /* The display is additive: black adds no light (see-through), colours glow on top of the world. */
+  .hud { position: absolute; left: 50%; top: var(--y, 52%); inline-size: 600px; block-size: 600px;
+         transform: translate(-50%, -50%) scale(calc(var(--s, .5) * var(--fit, 1))); transform-origin: center;
+         mix-blend-mode: screen; opacity: var(--b, .92); filter: blur(.35px); }
+  .hud iframe { inline-size: 100%; block-size: 100%; border: 0; background: #000; display: block; }
+  .bounds .hud { outline: 2px dashed rgba(255,255,255,.35); outline-offset: 0; }
+
+  /* Eyecup: dark, soft-edged rounded lens with a gentle vignette inside it. */
+  .lens { position: absolute; inset: 0; pointer-events: none;
+          background: radial-gradient(ellipse 46% 50% at 50% 50%, transparent 74%, rgba(4,4,6,.55) 88%, rgba(4,4,6,.97) 100%); }
+  .lens::before { content: ""; position: absolute; inset: 0;
+          background: radial-gradient(ellipse 60% 64% at 50% 52%, transparent 60%, rgba(0,0,0,.35) 100%); }
+  .lens::after { content: ""; position: absolute; inset: -40px; border-radius: 50%;
+          box-shadow: inset 0 0 120px 70px rgba(3,3,5,.9); filter: blur(10px); }
+
+  .note { position: absolute; left: 50%; bottom: 6%; transform: translateX(-50%); margin: 0; padding: 6px 12px;
+          background: rgba(0,0,0,.7); border-radius: 6px; color: var(--ink); font-size: 13px; }
+
+  /* ---------- controls ---------- */
+  .panel { inline-size: min(100%, 1180px); display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: start;
+           background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+  .panel h2 { font: 600 11px system-ui; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); margin: 0 0 8px; }
+  .pad { display: grid; grid-template-columns: repeat(3, 40px); grid-template-rows: repeat(3, 40px); gap: 4px; }
+  .pad button, .btn { background: #222025; color: var(--ink); border: 1px solid var(--line); border-radius: 6px; font: inherit; cursor: pointer; }
+  .pad button:hover, .btn:hover { border-color: var(--pink); }
+  .pad .ok { background: var(--pink); color: #2a0d1b; font-weight: 600; font-size: 12px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .btn { padding: 6px 10px; }
+  .scenes { display: flex; gap: 6px; flex-wrap: wrap; }
+  .scene { inline-size: 74px; block-size: 46px; border-radius: 6px; border: 2px solid transparent; background: center / cover; cursor: pointer; position: relative; padding: 0; }
+  .scene[aria-pressed="true"] { border-color: var(--pink); }
+  .scene span { position: absolute; inset: auto 0 0 0; font-size: 10px; background: rgba(0,0,0,.55); color: #fff; padding: 1px 3px; text-align: left; }
+  .upload { display: grid; place-items: center; background: #222025; border: 1px dashed #4a464e; color: var(--dim); font-size: 11px; }
+  .sliders { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; align-items: center; min-inline-size: 220px; }
+  .sliders label { color: var(--dim); font-size: 12px; }
+  input[type=range] { accent-color: var(--pink); }
+  .checks { display: flex; gap: 14px; margin-top: 8px; color: var(--dim); font-size: 12px; }
+  .hint { color: var(--dim); font-size: 12px; margin: 8px 0 0; }
+  kbd { font: 11px ui-monospace, monospace; background: #222025; border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; }
+  @media (max-width: 760px) { .panel { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<h1>questie <span>· glasses preview</span></h1>
+
+<main class="stage walking" id="stage" aria-label="Simulated view through Meta Ray-Ban Display glasses">
+  <div class="bg soft" id="bgSoft"></div>
+  <div class="bg sharp" id="bgSharp"></div>
+  <div class="hud"><iframe id="app" src="index.html" title="questie running on the glasses display"></iframe></div>
+  <div class="lens"></div>
+  <p class="note" id="note" hidden>Back on the home screen exits the app on the glasses</p>
+</main>
+
+<section class="panel">
+  <div>
+    <h2>Controls</h2>
+    <div class="pad">
+      <span></span><button data-key="ArrowUp" aria-label="Swipe up">▲</button><span></span>
+      <button data-key="ArrowLeft" aria-label="Swipe left">◀</button><button class="ok" data-key="Enter">tap</button><button data-key="ArrowRight" aria-label="Swipe right">▶</button>
+      <button data-back aria-label="Back">↩</button><button data-key="ArrowDown" aria-label="Swipe down">▼</button><span></span>
+    </div>
+  </div>
+
+  <div>
+    <h2>Scene</h2>
+    <div class="scenes" id="scenes"></div>
+    <p class="hint">Keyboard works too: <kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> swipe · <kbd>Enter</kbd> tap · <kbd>Esc</kbd> back</p>
+  </div>
+
+  <div>
+    <h2>Display</h2>
+    <div class="sliders">
+      <label for="size">Size</label><input id="size" type="range" min="30" max="85" value="50">
+      <label for="bright">Brightness</label><input id="bright" type="range" min="40" max="100" value="92">
+      <label for="height">Height</label><input id="height" type="range" min="35" max="65" value="52">
+    </div>
+    <div class="checks">
+      <label><input type="checkbox" id="walk" checked> walking</label>
+      <label><input type="checkbox" id="bounds"> display edge</label>
+      <button class="btn" id="reload" type="button">reload app</button>
+    </div>
+  </div>
+</section>
+
+<script>
+// Free Unsplash photos served by picsum.photos (stable ids).
+const SCENES = [
+  { id: 17, name: "Park path" }, { id: 57, name: "City street" }, { id: 28, name: "Forest creek" },
+  { id: 128, name: "Lakeside" }, { id: 110, name: "Golden hour" }, { id: 164, name: "Canal town" },
+];
+const stage = document.getElementById("stage"), frame = document.getElementById("app");
+const store = { get(k, d) { try { return JSON.parse(localStorage.getItem("questieSim." + k)) ?? d; } catch { return d; } },
+                set(k, v) { try { localStorage.setItem("questieSim." + k, JSON.stringify(v)); } catch {} } };
+
+// ---- scenes ----
+const scenesEl = document.getElementById("scenes");
+function setBackground(url) { ["bgSoft", "bgSharp"].forEach(id => document.getElementById(id).style.backgroundImage = `url("${url}")`); }
+function pickScene(i) {
+  scenesEl.querySelectorAll(".scene").forEach((b, j) => b.setAttribute("aria-pressed", String(j === i)));
+  if (SCENES[i]) { setBackground(`https://picsum.photos/id/${SCENES[i].id}/1920/1080`); store.set("scene", i); }
+}
+SCENES.forEach((s, i) => {
+  const b = document.createElement("button");
+  b.className = "scene"; b.type = "button"; b.style.backgroundImage = `url(https://picsum.photos/id/${s.id}/160/100)`;
+  b.innerHTML = `<span>${s.name}</span>`; b.onclick = () => pickScene(i);
+  scenesEl.append(b);
+});
+// Your own photo stays on this computer: it's read locally, never uploaded.
+const up = document.createElement("label");
+up.className = "scene upload"; up.innerHTML = `your photo<input type="file" accept="image/*" hidden>`;
+up.querySelector("input").onchange = e => { const f = e.target.files[0]; if (!f) return;
+  scenesEl.querySelectorAll(".scene").forEach(b => b.setAttribute("aria-pressed", "false"));
+  up.setAttribute("aria-pressed", "true"); setBackground(URL.createObjectURL(f)); };
+scenesEl.append(up);
+pickScene(store.get("scene", 0));
+
+// ---- display sliders and toggles ----
+const sliders = { size: v => stage.style.setProperty("--s", v / 100), bright: v => stage.style.setProperty("--b", v / 100),
+                  height: v => stage.style.setProperty("--y", v + "%") };
+Object.entries(sliders).forEach(([id, apply]) => {
+  const el = document.getElementById(id);
+  el.value = store.get(id, el.value); apply(el.value);
+  el.oninput = () => { apply(el.value); store.set(id, el.value); };
+});
+// The display is drawn at 600×600 and scaled, so size it relative to the stage width.
+new ResizeObserver(() => stage.style.setProperty("--fit", stage.clientWidth / 1180)).observe(stage);
+const toggles = { walk: "walking", bounds: "bounds" };
+Object.entries(toggles).forEach(([id, cls]) => {
+  const el = document.getElementById(id);
+  el.checked = store.get(id, el.checked); stage.classList.toggle(cls, el.checked);
+  el.onchange = () => { stage.classList.toggle(cls, el.checked); store.set(id, el.checked); };
+});
+document.getElementById("reload").onclick = () => frame.contentWindow.location.reload();
+
+// ---- input: send the same events the glasses produce (arrow keys, Enter, history Back) ----
+function press(key) {
+  const win = frame.contentWindow, doc = win.document;
+  const target = doc.activeElement && doc.activeElement !== doc.body ? doc.activeElement : doc.body;
+  const ev = new win.KeyboardEvent("keydown", { key, bubbles: true, cancelable: true });
+  target.dispatchEvent(ev);
+  // A synthetic Enter doesn't press buttons by itself, so activate the selected control.
+  if (key === "Enter" && !ev.defaultPrevented) {
+    const el = doc.activeElement && doc.activeElement !== doc.body ? doc.activeElement : doc.querySelector("[data-sel]");
+    if (el?.tagName === "INPUT") el.focus(); else el?.click();
+  }
+}
+// The app's history is shared with this page, so going back past the app's home screen would
+// navigate the simulator itself away. On the glasses that Back exits the app, so just say so.
+const note = document.getElementById("note");
+function back() {
+  const depth = frame.contentWindow.history.state?.d || 0;
+  if (depth > 0) return frame.contentWindow.history.back();
+  note.hidden = false; clearTimeout(back.t); back.t = setTimeout(() => (note.hidden = true), 1800);
+}
+document.querySelectorAll("[data-key]").forEach(b => b.onclick = () => press(b.dataset.key));
+document.querySelector("[data-back]").onclick = back;
+addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT" && e.target.type !== "checkbox") return;
+  if (e.key.startsWith("Arrow") || e.key === "Enter") { e.preventDefault(); press(e.key); }
+  else if (e.key === "Escape" || e.key === "Backspace") { e.preventDefault(); back(); }
+});
+</script>
+</body>
+</html>
