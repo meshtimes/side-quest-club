@@ -16,10 +16,12 @@
   /* ---------- the view through the glasses ---------- */
   .stage { position: relative; inline-size: min(100%, 1180px); aspect-ratio: 16 / 9; overflow: hidden; border-radius: 6px; background: #000; }
   .bg { position: absolute; inset: -4%; background: center / cover no-repeat; }
-  .bg.soft { filter: blur(16px) brightness(.85); }
-  /* sharp only in the middle of the lens, so the edges fall off into blur like real optics */
-  .bg.sharp { -webkit-mask-image: radial-gradient(ellipse 40% 44% at 50% 50%, #000 60%, transparent 100%);
-              mask-image: radial-gradient(ellipse 40% 44% at 50% 50%, #000 60%, transparent 100%); }
+  /* Seen through a lightly tinted lens: a touch dimmer and less saturated than the bare photo. */
+  .bg { filter: saturate(.88) brightness(.86); }
+  .bg.soft { filter: blur(14px) saturate(.88) brightness(.78); }
+  /* sharp across most of the lens; only the outer edges fall off into blur like real optics */
+  .bg.sharp { -webkit-mask-image: radial-gradient(ellipse 50% 56% at 50% 50%, #000 72%, transparent 100%);
+              mask-image: radial-gradient(ellipse 50% 56% at 50% 50%, #000 72%, transparent 100%); }
   .walking .bg { animation: walk 14s ease-in-out infinite alternate; }
   @keyframes walk { from { transform: scale(1) translate(0, 0); } 50% { transform: scale(1.05) translate(-.6%, .4%); } to { transform: scale(1.09) translate(.5%, -.3%); } }
 
@@ -30,13 +32,12 @@
   .hud iframe { inline-size: 100%; block-size: 100%; border: 0; background: #000; display: block; }
   .bounds .hud { outline: 2px dashed rgba(255,255,255,.35); outline-offset: 0; }
 
-  /* Eyecup: dark, soft-edged rounded lens with a gentle vignette inside it. */
-  .lens { position: absolute; inset: 0; pointer-events: none;
-          background: radial-gradient(ellipse 46% 50% at 50% 50%, transparent 74%, rgba(4,4,6,.55) 88%, rgba(4,4,6,.97) 100%); }
-  .lens::before { content: ""; position: absolute; inset: 0;
-          background: radial-gradient(ellipse 60% 64% at 50% 52%, transparent 60%, rgba(0,0,0,.35) 100%); }
-  .lens::after { content: ""; position: absolute; inset: -40px; border-radius: 50%;
-          box-shadow: inset 0 0 120px 70px rgba(3,3,5,.9); filter: blur(10px); }
+  /* Wayfarer-style frame: a wide rounded-rectangle lens whose top and bottom run off the view.
+     The frame is so close to the eye that it's completely out of focus, so it shows as dark,
+     heavily blurred edges on the sides and in the corners rather than a crisp outline. */
+  .lens { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; pointer-events: none; }
+  .tint { position: absolute; inset: 0; pointer-events: none;
+          background: radial-gradient(ellipse 70% 80% at 50% 50%, transparent 55%, rgba(0,0,0,.28) 100%); }
 
   .note { position: absolute; left: 50%; bottom: 6%; transform: translateX(-50%); margin: 0; padding: 6px 12px;
           background: rgba(0,0,0,.7); border-radius: 6px; color: var(--ink); font-size: 13px; }
@@ -72,7 +73,19 @@
   <div class="bg soft" id="bgSoft"></div>
   <div class="bg sharp" id="bgSharp"></div>
   <div class="hud"><iframe id="app" src="index.html" title="questie running on the glasses display"></iframe></div>
-  <div class="lens"></div>
+  <div class="tint"></div>
+  <svg class="lens" viewBox="0 0 1600 900" preserveAspectRatio="none" aria-hidden="true">
+    <defs>
+      <filter id="defocus" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="34"/></filter>
+      <mask id="lensHole" maskUnits="userSpaceOnUse" x="-200" y="-200" width="2000" height="1300">
+        <rect x="-200" y="-200" width="2000" height="1300" fill="#fff"/>
+        <!-- lens opening: slightly wider at the top, softer bottom corners, like a Wayfarer lens -->
+        <path fill="#000" d="M 290 -70 L 1310 -70 C 1450 -70 1505 40 1500 220 L 1490 640
+                 C 1485 860 1395 980 1230 980 L 370 980 C 205 980 115 860 110 640 L 100 220 C 95 40 150 -70 290 -70 Z"/>
+      </mask>
+    </defs>
+    <g filter="url(#defocus)"><rect x="-200" y="-200" width="2000" height="1300" fill="#070708" mask="url(#lensHole)"/></g>
+  </svg>
   <p class="note" id="note" hidden>Back on the home screen exits the app on the glasses</p>
 </main>
 
