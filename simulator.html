@@ -12,11 +12,11 @@
   body { min-height: 100vh; display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 18px 16px 28px; }
 
   /* ---------- the product shot ---------- */
-  .stage { position: relative; inline-size: min(100%, 760px); aspect-ratio: 1; overflow: hidden; border-radius: 14px; }
+  .stage { position: relative; inline-size: min(100%, 900px); aspect-ratio: 16 / 10; overflow: hidden; border-radius: 14px; }
   .bg { position: absolute; inset: 0; background: center / cover no-repeat; }
   .bg canvas { inline-size: 100%; block-size: 100%; object-fit: cover; image-rendering: pixelated; display: block; }
   .bg canvas[hidden] { display: none; }
-  .headline { position: absolute; inset: 5% 0 auto; text-align: center; pointer-events: none; }
+  .headline { position: absolute; inset: 4% 0 auto; text-align: center; pointer-events: none; }
   .headline b { display: block; font: 400 clamp(28px, 7vw, 56px) "Tiny5", monospace; color: var(--pink); letter-spacing: 2px; line-height: 1; }
   .headline span { font: 400 clamp(12px, 2.4vw, 18px) "Tiny5", monospace; color: rgba(255,255,255,.75); letter-spacing: 1px; }
   .light .headline span { color: rgba(40,30,45,.7); }
@@ -33,7 +33,7 @@
           background: rgba(20,12,30,.85); border-radius: 6px; font: 400 13px "Tiny5", monospace; }
 
   /* ---------- controls ---------- */
-  .panel { inline-size: min(100%, 760px); display: grid; grid-template-columns: auto 1fr; gap: 16px 22px;
+  .panel { inline-size: min(100%, 900px); display: grid; grid-template-columns: auto 1fr; gap: 16px 22px;
            background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
   .panel h2 { font: 400 12px "Tiny5", monospace; letter-spacing: 1px; color: var(--dim); margin: 0 0 8px; }
   .pad { display: grid; grid-template-columns: repeat(3, 36px) 14px 44px 44px; grid-template-rows: repeat(3, 36px); gap: 4px; align-items: center; }
@@ -59,55 +59,30 @@
 </head>
 <body>
 
-<main class="stage" id="stage" aria-label="Pixel-art glasses with questie showing through the right lens">
+<main class="stage" id="stage" aria-label="Ray-Ban Meta style glasses with questie showing through the right lens">
   <div class="bg" id="bg"><canvas id="street" width="320" height="180" hidden></canvas></div>
   <div class="headline"><b>questie</b><span>side quests for your glasses</span></div>
   <div class="hud"><iframe id="app" src="index.html" title="questie running on the glasses display"></iframe></div>
-  <canvas id="glasses" width="144" height="144"></canvas>
-  <svg id="real" viewBox="0 0 144 144" hidden aria-hidden="true">
+  <canvas id="glasses" width="160" height="100"></canvas>
+  <svg id="real" viewBox="0 0 160 100" hidden aria-hidden="true">
     <defs>
-      <linearGradient id="acetate" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a3840"/><stop offset=".35" stop-color="#141318"/><stop offset="1" stop-color="#0a090c"/></linearGradient>
-      <linearGradient id="metal" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8f8e97"/><stop offset=".35" stop-color="#e9e9ee"/><stop offset=".6" stop-color="#b3b2bb"/><stop offset="1" stop-color="#dcdce2"/></linearGradient>
-      <linearGradient id="armGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4a4952"/><stop offset=".5" stop-color="#232228"/><stop offset="1" stop-color="#121115"/></linearGradient>
-      <linearGradient id="hinge" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3b3a42"/><stop offset=".5" stop-color="#55545d"/><stop offset="1" stop-color="#26252b"/></linearGradient>
-      <linearGradient id="glare" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+      <linearGradient id="acetate" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#46444c"/><stop offset=".22" stop-color="#1d1c21"/><stop offset=".8" stop-color="#111014"/><stop offset="1" stop-color="#0a090c"/></linearGradient>
+      <linearGradient id="glare" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".2"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
       <radialGradient id="lensTint" cx=".5" cy=".5" r=".7"><stop offset=".6" stop-color="#cfd8e6" stop-opacity="0"/><stop offset="1" stop-color="#cfd8e6" stop-opacity=".14"/></radialGradient>
-      <filter id="soft"><feGaussianBlur stdDeviation="2.4"/></filter>
-      <filter id="dof" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation=".9"/></filter>
-      <clipPath id="topHalf"><rect x="-60" y="0" width="260" height="73"/></clipPath>
-      <clipPath id="botHalf"><rect x="-60" y="73" width="260" height="80"/></clipPath>
+      <radialGradient id="cam" cx=".4" cy=".4" r=".7"><stop offset="0" stop-color="#4a4a56"/><stop offset=".6" stop-color="#16161c"/><stop offset="1" stop-color="#050507"/></radialGradient>
+      <filter id="soft"><feGaussianBlur stdDeviation="2"/></filter>
+      <filter id="hairline"><feGaussianBlur stdDeviation=".25"/></filter>
     </defs>
-    <ellipse id="realShadow" cx="72" cy="116" rx="70" ry="6" fill="#000" opacity=".28" filter="url(#soft)"/>
-    <!-- lens glass: faint tint toward the edges and a diagonal glare -->
-    <rect x="36" y="44" width="76" height="62" rx="12" fill="url(#lensTint)"/>
-    <rect x="-46" y="46" width="62" height="58" rx="12" fill="url(#lensTint)"/>
-    <path d="M 44 46 L 62 46 L 40 80 L 37 72 Z" fill="url(#glare)"/>
-    <!-- arm (closest to the camera, so slightly out of focus) and hinge block -->
-    <path d="M 113 50 L 124 52 L 152 128 L 150 140 L 136 136 L 116 66 Z" fill="url(#armGrad)" filter="url(#dof)"/>
-    <rect x="109" y="45" width="15" height="21" rx="3" fill="url(#hinge)"/>
-    <rect x="110" y="46" width="13" height="2" rx="1" fill="#fff" opacity=".18"/>
-    <!-- rims: black acetate across the top, thin silver metal along the bottom -->
-    <g clip-path="url(#botHalf)" fill="none">
-      <rect x="35" y="43" width="78" height="64" rx="13" stroke="url(#metal)" stroke-width="1.6"/>
-      <rect x="-47" y="45" width="64" height="60" rx="13" stroke="url(#metal)" stroke-width="1.6"/>
-    </g>
-    <g clip-path="url(#topHalf)" fill="none">
-      <rect x="33.5" y="41.5" width="81" height="67" rx="14.5" stroke="url(#acetate)" stroke-width="5"/>
-      <rect x="-48.5" y="43.5" width="67" height="63" rx="14.5" stroke="url(#acetate)" stroke-width="5"/>
-      <rect x="31.6" y="39.6" width="84.8" height="70" rx="16" stroke="#fff" stroke-opacity=".22" stroke-width=".5"/>
-    </g>
-    <!-- bridge -->
-    <path d="M 14 41 C 20 36 30 36 37 41 L 37 46 C 30 42 20 42 14 46 Z" fill="url(#acetate)"/>
-    <path d="M 15 40.6 C 21 36.4 29 36.4 36 40.6" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width=".5"/>
-    <!-- nose pads: clear plastic on thin metal arms -->
-    <g fill="#fff" fill-opacity=".28" stroke="#fff" stroke-opacity=".55" stroke-width=".4">
-      <path d="M 40 51 L 38 56" stroke="#b9b8c0" stroke-opacity="1" fill="none"/>
-      <ellipse cx="37.6" cy="62" rx="1.9" ry="5.2"/>
-      <path d="M 12 51 L 14 56" stroke="#b9b8c0" stroke-opacity="1" fill="none"/>
-      <ellipse cx="14.4" cy="62" rx="1.9" ry="5.2"/>
-    </g>
+    <ellipse id="realShadow" cx="80" cy="91" rx="66" ry="3.5" fill="#000" opacity=".3" filter="url(#soft)"/>
+    <path class="lensL" fill="url(#lensTint)"/><path class="lensR" fill="url(#lensTint)"/>
+    <path class="frameFull" fill="url(#acetate)" fill-rule="evenodd"/>
+    <path class="lensL" fill="none" stroke="#56545f" stroke-width=".8"/><path class="lensR" fill="none" stroke="#56545f" stroke-width=".8"/>
+    <path d="M 13 26.2 C 40 24.2 62 25.2 70 27.2 C 75 29.2 85 29.2 90 27.2 C 98 25.2 120 24.2 147 26.2" fill="none" stroke="#fff" stroke-opacity=".32" stroke-width=".7" filter="url(#hairline)"/>
+    <path d="M 30 33 L 42 33 L 27 60 L 23.5 52 Z" fill="url(#glare)"/><path d="M 104 33 L 116 33 L 101 60 L 98.5 52 Z" fill="url(#glare)"/>
+    <circle cx="13.5" cy="32" r="2.5" fill="url(#cam)"/><circle cx="146.5" cy="32" r="2.5" fill="url(#cam)"/>
+    <circle cx="12.7" cy="31.2" r=".55" fill="#fff" opacity=".7"/><circle cx="145.7" cy="31.2" r=".55" fill="#fff" opacity=".7"/>
   </svg>
-  <svg id="sketch" viewBox="0 0 144 144" hidden aria-hidden="true">
+  <svg id="sketch" viewBox="0 0 160 100" hidden aria-hidden="true">
     <defs>
       <!-- crayon: rough edges (displacement) and speckled gaps where the crayon skipped (grain mask) -->
       <filter id="crayon" x="-5%" y="-5%" width="110%" height="110%">
@@ -153,63 +128,47 @@ const store = { get(k, d) { try { return JSON.parse(localStorage.getItem("questi
                 set(k, v) { try { localStorage.setItem("questieSim2." + k, JSON.stringify(v)); } catch {} } };
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-// ---------- pixel-art glasses, seen from behind (144×144 grid) ----------
-// Browline style like the reference: thick black acetate across the top, fading to a thin
-// silver rim along the bottom. The right lens is the one with the display.
-const G = 144;
-const LENS = { x: 36, y: 44, w: 76, h: 62 };            // main (display) lens
-const LEFT = { x: -46, y: 46, w: 62, h: 58 };           // partly off-frame on the left
-const inRound = (x, y, r, grow, rad) => {
-  const x0 = r.x - grow, y0 = r.y - grow, x1 = r.x + r.w + grow, y1 = r.y + r.h + grow;
-  if (x < x0 || x >= x1 || y < y0 || y >= y1) return false;
-  const R = rad + grow, cx = Math.min(Math.max(x, x0 + R), x1 - R - 1), cy = Math.min(Math.max(y, y0 + R), y1 - R - 1);
-  return (x - cx) ** 2 + (y - cy) ** 2 <= R * R;
-};
+// ---------- shared shape: Ray-Ban Meta (Wayfarer) front view on a 160×100 grid ----------
+// Thick frame with a slightly dipped top, outer sides slanting in toward very rounded bottom corners,
+// a keyhole arch under the bridge, lenses wider at the top, and cameras in the top outer corners.
+// All three frame styles (pixel, realistic, sketch) are drawn from these same paths.
+const GW = 160, GH = 100;
+const FRAME_D = "M 12 25 C 40 23 62 24 70 26 C 75 28 85 28 90 26 C 98 24 120 23 148 25 C 151 25 152 27 151.5 30 L 150 40 " +
+  "C 148 50 142 66 138 76 C 136 82 131 86 124 86 L 98 86 C 94 86 92.5 84 92 80 L 89 60 C 89.5 52 86 47 80 47 " +
+  "C 74 47 70.5 52 71 60 L 68 80 C 67.5 84 66 86 62 86 L 36 86 C 29 86 24 82 22 76 C 18 66 12 50 10 40 L 8.5 30 C 8 27 9 25 12 25 Z";
+const LENS_L_D = "M 20 34 C 19.5 31.5 21 30.5 24 30.5 L 59 31.5 C 62 31.5 63.6 33 63.2 36 L 59.6 74 C 59.3 77 57.6 78.5 54.6 78.5 L 37 78.5 C 32 78.5 29.5 76 28 72 Z";
+const LENS_R_D = "M 140 34 C 140.5 31.5 139 30.5 136 30.5 L 101 31.5 C 98 31.5 96.4 33 96.8 36 L 100.4 74 C 100.7 77 102.4 78.5 105.4 78.5 L 123 78.5 C 128 78.5 130.5 76 132 72 Z";
+const LENS = { x: 96.4, y: 30.5, w: 44.1, h: 48 };       // bounding box of the right (display) lens
+const CAMS = [[13.5, 32], [146.5, 32]];
+document.querySelectorAll("#real .lensL").forEach(p => p.setAttribute("d", LENS_L_D));
+document.querySelectorAll("#real .lensR").forEach(p => p.setAttribute("d", LENS_R_D));
+document.querySelector("#real .frameFull").setAttribute("d", FRAME_D + " " + LENS_L_D + " " + LENS_R_D);
+
+// Pixel art: rasterise the shape at one cell per pixel, threshold for crisp edges, then shade.
 function drawGlasses(shadow) {
-  const g = document.getElementById("glasses").getContext("2d"), img = g.createImageData(G, G), d = img.data;
-  const put = (x, y, c, a = 255) => { if (x < 0 || y < 0 || x >= G || y >= G) return; const i = (y * G + x) * 4;
-    d[i] = c[0]; d[i + 1] = c[1]; d[i + 2] = c[2]; d[i + 3] = a; };
-  const BLACK = [20, 19, 24], SHINE = [78, 74, 88], SILVER_DK = [138, 137, 148], SILVER = [205, 205, 214], ARM = [62, 60, 70], ARM_HI = [96, 93, 106];
-  const PINK = [255, 168, 207], PINK_DK = [255, 126, 184];
-  // soft floor shadow under the frame (studio backgrounds only)
-  if (shadow) for (let y = 108; y < 124; y++) for (let x = 0; x < G; x++) {
-    const e = ((x - 70) / 74) ** 2 + ((y - 115) / 7) ** 2; if (e < 1 && (x + y) % 2 === 0) put(x, y, [0, 0, 0], Math.round(70 * (1 - e)));
+  const src = document.createElement("canvas"); src.width = GW; src.height = GH;
+  const sc = src.getContext("2d"), lensL = new Path2D(LENS_L_D), lensR = new Path2D(LENS_R_D);
+  sc.fill(new Path2D(FRAME_D + " " + LENS_L_D + " " + LENS_R_D), "evenodd");
+  const a = sc.getImageData(0, 0, GW, GH).data;
+  const isFrame = (x, y) => x >= 0 && y >= 0 && x < GW && y < GH && a[(y * GW + x) * 4 + 3] >= 128;
+  const isLens = (x, y) => sc.isPointInPath(lensL, x + .5, y + .5) || sc.isPointInPath(lensR, x + .5, y + .5);
+  const g = document.getElementById("glasses").getContext("2d"), img = g.createImageData(GW, GH), d = img.data;
+  const put = (x, y, c, al = 255) => { if (x < 0 || y < 0 || x >= GW || y >= GH) return; const i = (y * GW + x) * 4;
+    d[i] = c[0]; d[i + 1] = c[1]; d[i + 2] = c[2]; d[i + 3] = al; };
+  const BLACK = [24, 23, 28], SHINE = [92, 88, 102], BEVEL = [56, 54, 64], UNDER = [10, 9, 12];
+  if (shadow) for (let y = 86; y < 96; y++) for (let x = 0; x < GW; x++) {      // dithered floor shadow
+    const e = ((x - 80) / 68) ** 2 + ((y - 91) / 4) ** 2; if (e < 1 && (x + y) % 2 === 0) put(x, y, [0, 0, 0], Math.round(80 * (1 - e)));
   }
-  // temple arm: from the hinge block sweeping down to the bottom-right corner, widening toward us
-  const ax0 = 118, ay0 = 56, ax1 = 150, ay1 = 132;
-  for (let y = 40; y < G; y++) for (let x = 100; x < G; x++) {
-    const vx = ax1 - ax0, vy = ay1 - ay0, t = Math.max(0, Math.min(1, ((x - ax0) * vx + (y - ay0) * vy) / (vx * vx + vy * vy)));
-    const dist = Math.hypot(x - ax0 - t * vx, y - ay0 - t * vy), half = 3 + t * 4.5;
-    if (dist <= half) put(x, y, dist > half - 1.5 && (x - ax0) * vy - (y - ay0) * vx < 0 ? ARM_HI : ARM);
+  for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
+    if (!isFrame(x, y)) continue;
+    const nearLens = isLens(x + 1, y) || isLens(x - 1, y) || isLens(x, y + 1) || isLens(x, y - 1);
+    put(x, y, !isFrame(x, y - 1) ? SHINE : nearLens ? BEVEL : !isFrame(x, y + 1) ? UNDER : BLACK);
   }
-  // hinge block with the display module, and a tiny pink heart on it
-  for (let y = 46; y < 66; y++) for (let x = 110; x < 124; x++) put(x, y, y < 49 ? ARM_HI : x > 121 ? [30, 29, 35] : ARM);
-  ["#.#", "###", ".#."].forEach((r, j) => [...r].forEach((c, i) => c === "#" && put(115 + i, 54 + j, PINK)));
-  // rims: thick black top half, thin dithered silver bottom half
-  const rim = (L, rad) => {
-    const mid = L.y + L.h * .48;
-    for (let y = L.y - 6; y < L.y + L.h + 4; y++) for (let x = L.x - 6; x < L.x + L.w + 6; x++) {
-      if (inRound(x, y, L, 0, rad)) continue;
-      const top = y < mid, t = top ? 5 : 2;
-      if (!inRound(x, y, L, t, rad)) continue;
-      if (top) put(x, y, !inRound(x, y - 1, L, t, rad) ? SHINE : BLACK);
-      else { const k = (y - mid) / (L.h * .55); put(x, y, (x + y) % 2 === 0 && k < .5 ? SILVER_DK : k < .25 ? SILVER_DK : SILVER); }
-    }
-  };
-  rim(LEFT, 12); rim(LENS, 12);
-  // bridge: a thick black arch joining the two lenses
-  for (let x = LEFT.x + LEFT.w; x < LENS.x; x++) {
-    const arch = Math.round(2 * Math.sin(Math.PI * (x - (LEFT.x + LEFT.w)) / (LENS.x - LEFT.x - LEFT.w)));
-    for (let y = 39 - arch; y < 46 - arch; y++) put(x, y, y === 39 - arch ? SHINE : BLACK);
+  for (const [cx, cy] of CAMS) for (let y = -3; y <= 3; y++) for (let x = -3; x <= 3; x++) {   // camera lenses
+    const r = Math.hypot(x, y); if (r > 2.6) continue;
+    put(Math.floor(cx + x), Math.floor(cy + y), r > 1.8 ? [74, 72, 82] : x === -1 && y === -1 ? [210, 210, 220] : [12, 12, 16]);
   }
-  // nose pads (pink, for cuteness) on little silver arms
-  const PAD = [".##.", "####", "####", "####", "####", ".##."];
-  for (const [px, dir] of [[LENS.x + 4, 1], [LEFT.x + LEFT.w - 8, -1]]) {
-    for (let i = 0; i < 4; i++) put(px + (dir > 0 ? -i : 3 + i), 52 + i, SILVER_DK);        // arm from rim to pad
-    PAD.forEach((r, j) => [...r].forEach((c, i) => c === "#" && put(px + i, 56 + j, i === (dir > 0 ? 1 : 2) ? PINK : PINK_DK)));
-  }
-  // two little glare streaks on the main lens
-  for (let i = 0; i < 9; i++) { put(LENS.x + 6 + i, LENS.y + 12 - i, [255, 255, 255], 70); put(LENS.x + 10 + i, LENS.y + 13 - i, [255, 255, 255], 45); }
+  for (let i = 0; i < 8; i++) { put(27 + i, 40 - i, [255, 255, 255], 70); put(30 + i, 41 - i, [255, 255, 255], 45); }   // glare
   g.putImageData(img, 0, 0);
 }
 
@@ -268,7 +227,7 @@ function drawStreet(P, t) {
 // genuinely washes out, just like on the real glasses in bright light)
 const BACKS = [
   { name: "studio", css: "radial-gradient(ellipse at 50% 35%, #9b98a3, #6a6773 70%, #55525d)", studio: true, crayon: "#e0614c" },
-  { name: "studio dark", css: "radial-gradient(ellipse at 50% 35%, #3a3740, #1d1b21 70%, #141217)", studio: true },
+  { name: "studio dark", css: "radial-gradient(ellipse at 50% 35%, #3a3740, #1d1b21 70%, #141217)", studio: true, crayon: "#f6f2ee" },
   { name: "studio light", css: "radial-gradient(ellipse at 50% 35%, #f1f0f2, #dcdadf 70%, #cfcdd3)", studio: true, light: true, crayon: "#d9604a" },
   { name: "street dusk", street: "dusk" }, { name: "street night", street: "night" },
   { name: "park", photo: 17 }, { name: "city", photo: 57 }, { name: "forest", photo: 28 }, { name: "lake", photo: 128 },
@@ -311,35 +270,22 @@ setInterval(() => { if (current?.street && !reduceMotion && !document.hidden) { 
 // Each shape is a list of points; every redraw nudges them slightly (seeded) and smooths them into a
 // curve, so lines wobble like a hand-drawn cartoon. A faint second pass gives the doubled crayon look.
 const rnd = s => { const x = Math.sin(s * 91.7 + 13.1) * 43758.5453; return x - Math.floor(x); };
-function roundRectPts(x, y, w, h, r, from = 0, to = 1, step = 2.2) {
-  const segs = [], arc = (cx, cy, a0) => { for (let a = 0; a < 1; a += .25) segs.push([cx + r * Math.cos(a0 + a * Math.PI / 2), cy + r * Math.sin(a0 + a * Math.PI / 2)]); };
-  // clockwise from the middle of the left side
-  for (let yy = y + h / 2; yy > y + r; yy -= step) segs.push([x, yy]);
-  arc(x + r, y + r, Math.PI);
-  for (let xx = x + r; xx < x + w - r; xx += step) segs.push([xx, y]);
-  arc(x + w - r, y + r, -Math.PI / 2);
-  for (let yy = y + r; yy < y + h - r; yy += step) segs.push([x + w, yy]);
-  arc(x + w - r, y + h - r, 0);
-  for (let xx = x + w - r; xx > x + r; xx -= step) segs.push([xx, y + h]);
-  arc(x + r, y + h - r, Math.PI / 2);
-  for (let yy = y + h - r; yy > y + h / 2; yy -= step) segs.push([x, yy]);
-  return segs.slice(Math.floor(from * segs.length), Math.ceil(to * segs.length));
+// Sample points along an SVG path, so the crayon follows exactly the same outline as the other styles.
+const sampler = document.createElementNS("http://www.w3.org/2000/svg", "path");
+document.querySelector("#sketch defs").append(sampler);
+function pathPts(d, step = 1.6) {
+  sampler.setAttribute("d", d);
+  const len = sampler.getTotalLength(), out = [];
+  for (let l = 0; l < len; l += step) { const p = sampler.getPointAtLength(l); out.push([p.x, p.y]); }
+  return out;
 }
 const line = (x0, y0, x1, y1, n = 8) => [...Array(n + 1)].map((_, i) => [x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n]);
-const curve = (x0, y0, cx, cy, x1, y1, n = 10) => [...Array(n + 1)].map((_, i) => { const t = i / n, u = 1 - t;
-  return [u * u * x0 + 2 * u * t * cx + t * t * x1, u * u * y0 + 2 * u * t * cy + t * t * y1]; });
 const oval = (cx, cy, rx, ry, n = 14) => [...Array(n + 2)].map((_, i) => [cx + rx * Math.cos(i / n * 2 * Math.PI), cy + ry * Math.sin(i / n * 2 * Math.PI)]);
 const SKETCH = [
-  { pts: roundRectPts(LENS.x, LENS.y, LENS.w, LENS.h, 12), close: true },                    // main lens
-  { pts: roundRectPts(LENS.x - 5, LENS.y - 5, LENS.w + 10, LENS.h + 10, 17, 0, .5) },       // its thick top band
-  { pts: roundRectPts(LEFT.x, LEFT.y, LEFT.w, LEFT.h, 12), close: true },                    // left lens
-  { pts: roundRectPts(LEFT.x - 5, LEFT.y - 5, LEFT.w + 10, LEFT.h + 10, 17, 0, .5) },
-  { pts: curve(16, 41, 26, 34, 36, 41) }, { pts: curve(16, 46, 26, 40, 36, 46) },            // bridge
-  { pts: line(40, 51, 38.4, 56.5, 3) }, { pts: oval(37.6, 62, 2, 5.2) },                    // nose pads
-  { pts: line(12, 51, 13.6, 56.5, 3) }, { pts: oval(14.4, 62, 2, 5.2) },
-  { pts: roundRectPts(110, 45, 14, 21, 3), close: true },                                    // hinge block
-  { pts: line(124, 53, 151, 130, 12) }, { pts: line(113, 64, 138, 142, 12) },                // arm
-  { pts: line(42, 52, 49, 45, 3) }, { pts: line(42, 58, 54, 46, 4) },                        // glare doodles
+  { pts: pathPts(FRAME_D), close: true },                                   // outer frame, bridge arch included
+  { pts: pathPts(LENS_L_D), close: true }, { pts: pathPts(LENS_R_D), close: true },
+  ...CAMS.map(([x, y]) => ({ pts: oval(x, y, 2.4, 2.4) })),                 // cameras
+  { pts: line(26, 44, 34, 36, 3) }, { pts: line(26, 50, 38, 38, 4) },       // glare doodles
 ];
 function smooth(pts) {   // Catmull-Rom through the points, as cubic curves
   let d = `M${pts[0][0].toFixed(2)},${pts[0][1].toFixed(2)}`;
@@ -382,9 +328,9 @@ setStyle(store.get("style", "pixel"));
 // ---------- place the app in the main lens ----------
 const sizeEl = document.getElementById("size"), brightEl = document.getElementById("bright"), boundsEl = document.getElementById("bounds");
 function placeHud() {
-  const k = stage.clientWidth / G;
-  stage.style.setProperty("--hx", ((LENS.x + LENS.w / 2) / G * 100) + "%");
-  stage.style.setProperty("--hy", ((LENS.y + LENS.h / 2) / G * 100) + "%");
+  const k = stage.clientWidth / GW;
+  stage.style.setProperty("--hx", ((LENS.x + LENS.w / 2) / GW * 100) + "%");
+  stage.style.setProperty("--hy", ((LENS.y + LENS.h / 2) / GH * 100) + "%");
   stage.style.setProperty("--hs", (LENS.h * k / 600) * (sizeEl.value / 100));
   stage.style.setProperty("--b", brightEl.value / 100);
 }
