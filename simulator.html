@@ -6,284 +6,256 @@
 <title>questie glasses preview</title>
 <link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
 <style>
-  :root { --pink: #ffa8cf; --hot: #ff7eb8; --shell: #f7c9dd; --shell-dk: #e9a9c6; --shell-lt: #ffe1ee;
-          --ink: #3a1d2c; --bezel: #2a2230; --panel: #161518; --line: #2a282d; --dim: #8d8790; }
+  :root { --pink: #ffa8cf; --hot: #ff7eb8; --lilac: #c9b3ff; --ink: #f4eef1; --dim: #8d8790; --panel: #161518; --line: #2a282d; }
   * { box-sizing: border-box; }
-  html, body { margin: 0; background: #1a1420; color: #f4eef1; font: 14px/1.4 system-ui, sans-serif; }
-  body { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 20px 16px 28px; }
+  html, body { margin: 0; background: #0f0e11; color: var(--ink); font: 14px/1.4 system-ui, sans-serif; }
+  body { min-height: 100vh; display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 18px 16px 28px; }
 
-  /* ---------- pastel handheld ---------- */
-  .console { inline-size: min(100%, 1240px); display: grid; grid-template-columns: 150px 1fr 150px; align-items: center; gap: 22px;
-             background: var(--shell); border-radius: 44px 44px 64px 64px; padding: 26px 28px 30px;
-             box-shadow: inset 0 6px 0 var(--shell-lt), inset 0 -8px 0 var(--shell-dk); }
-  .bezel { background: var(--bezel); border-radius: 18px 18px 34px 18px; padding: 14px 16px 10px; }
-  .bezel-top { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font: 400 13px "Tiny5", monospace; color: #b9a7c4; letter-spacing: 1px; }
-  .led { inline-size: 8px; block-size: 8px; background: var(--hot); box-shadow: 0 0 8px var(--hot); }
-  .bezel-top .brand { margin-inline-start: auto; color: var(--pink); }
-  .label { font: 400 13px "Tiny5", monospace; color: var(--ink); text-align: center; letter-spacing: 1px; margin-top: 8px; }
-
-  /* d-pad */
-  .dpad { position: relative; inline-size: 132px; block-size: 132px; margin: 0 auto; }
-  .dpad button { position: absolute; inline-size: 44px; block-size: 44px; background: #3b2c3a; border: 0; color: #f7c9dd; font-size: 14px; cursor: pointer;
-                 box-shadow: inset 0 -4px 0 #24192a; }
-  .dpad button:active { box-shadow: inset 0 2px 0 #24192a; transform: translateY(2px); }
-  .dpad .up { left: 44px; top: 0; border-radius: 8px 8px 0 0; } .dpad .down { left: 44px; bottom: 0; border-radius: 0 0 8px 8px; }
-  .dpad .left { left: 0; top: 44px; border-radius: 8px 0 0 8px; } .dpad .right { right: 0; top: 44px; border-radius: 0 8px 8px 0; }
-  .dpad .mid { left: 44px; top: 44px; background: #3b2c3a; box-shadow: none; cursor: default; }
-
-  /* A / B */
-  .ab { position: relative; inline-size: 140px; block-size: 120px; margin: 0 auto; }
-  .ab button { position: absolute; inline-size: 58px; block-size: 58px; border-radius: 50%; border: 0; cursor: pointer;
-               font: 400 22px "Tiny5", monospace; color: var(--ink); }
-  .ab .a { right: 0; top: 0; background: var(--hot); box-shadow: inset 0 -5px 0 #d65a96; }
-  .ab .b { left: 0; bottom: 0; background: #c9b3ff; box-shadow: inset 0 -5px 0 #a48ce0; }
-  .ab button:active { transform: translateY(2px); box-shadow: none; }
-  .ab small { position: absolute; font: 400 11px "Tiny5", monospace; color: var(--ink); }
-  .ab .la { right: 14px; top: 62px; } .ab .lb { left: 12px; bottom: -16px; }
-
-  .pills { grid-column: 2; display: flex; justify-content: center; gap: 26px; margin-top: -6px; }
-  .pill { display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: 0; cursor: pointer; font: 400 11px "Tiny5", monospace; color: var(--ink); letter-spacing: 1px; }
-  .pill i { inline-size: 46px; block-size: 12px; border-radius: 6px; background: #b88aa3; box-shadow: inset 0 -3px 0 #9a6e86; }
-  .pill:active i { transform: translateY(1px); box-shadow: none; }
-  .grille { grid-column: 3; justify-self: center; display: grid; grid-template-columns: repeat(5, 6px); gap: 6px; transform: rotate(-20deg); margin-top: -6px; }
-  .grille i { inline-size: 6px; block-size: 6px; border-radius: 50%; background: var(--shell-dk); }
-
-  /* ---------- the view: pixel street, the app in the right lens, pixel glasses on top ---------- */
-  .stage { position: relative; inline-size: 100%; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 6px; background: #000; }
-  .stage canvas { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; image-rendering: pixelated; }
-  /* The display is additive: black adds no light (see-through), colours glow on top of the world. */
+  /* ---------- the product shot ---------- */
+  .stage { position: relative; inline-size: min(100%, 760px); aspect-ratio: 1; overflow: hidden; border-radius: 14px; }
+  .bg { position: absolute; inset: 0; background: center / cover no-repeat; }
+  .bg canvas { inline-size: 100%; block-size: 100%; object-fit: cover; image-rendering: pixelated; display: block; }
+  .bg canvas[hidden] { display: none; }
+  .headline { position: absolute; inset: 5% 0 auto; text-align: center; pointer-events: none; }
+  .headline b { display: block; font: 400 clamp(28px, 7vw, 56px) "Tiny5", monospace; color: var(--pink); letter-spacing: 2px; line-height: 1; }
+  .headline span { font: 400 clamp(12px, 2.4vw, 18px) "Tiny5", monospace; color: rgba(255,255,255,.75); letter-spacing: 1px; }
+  .light .headline span { color: rgba(40,30,45,.7); }
+  /* The display is additive: black adds no light (see-through), colours glow on top of whatever is behind. */
   .hud { position: absolute; left: var(--hx); top: var(--hy); inline-size: 600px; block-size: 600px;
          transform: translate(-50%, -50%) scale(var(--hs, .5)); transform-origin: center;
          mix-blend-mode: screen; opacity: var(--b, .95); }
   .hud iframe { inline-size: 100%; block-size: 100%; border: 0; background: #000; display: block; }
-  .bounds .hud { outline: 3px dashed rgba(255,255,255,.4); }
-  .note { position: absolute; left: 50%; bottom: 6%; transform: translateX(-50%); margin: 0; padding: 6px 12px;
-          background: rgba(20,12,30,.85); border-radius: 6px; color: #f4eef1; font: 400 13px "Tiny5", monospace; }
+  .bounds .hud { outline: 3px dashed rgba(255,255,255,.5); }
+  #glasses { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; image-rendering: pixelated; pointer-events: none; }
+  .note { position: absolute; left: 50%; bottom: 5%; transform: translateX(-50%); margin: 0; padding: 6px 12px;
+          background: rgba(20,12,30,.85); border-radius: 6px; font: 400 13px "Tiny5", monospace; }
 
-  /* ---------- settings drawer ---------- */
-  details { inline-size: min(100%, 1240px); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 16px; }
-  summary { cursor: pointer; color: var(--dim); font: 400 13px "Tiny5", monospace; letter-spacing: 1px; }
-  .settings { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: center; padding-top: 12px; color: var(--dim); font-size: 12px; }
-  .settings label { display: flex; align-items: center; gap: 8px; }
+  /* ---------- controls ---------- */
+  .panel { inline-size: min(100%, 760px); display: grid; grid-template-columns: auto 1fr; gap: 16px 22px;
+           background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .panel h2 { font: 400 12px "Tiny5", monospace; letter-spacing: 1px; color: var(--dim); margin: 0 0 8px; }
+  .pad { display: grid; grid-template-columns: repeat(3, 36px) 14px 44px 44px; grid-template-rows: repeat(3, 36px); gap: 4px; align-items: center; }
+  .pad button { background: #2a2530; color: var(--ink); border: 0; border-radius: 6px; font: inherit; cursor: pointer; block-size: 36px; }
+  .pad button:hover { outline: 2px solid var(--pink); }
+  .pad .a, .pad .b { inline-size: 44px; block-size: 44px; border-radius: 50%; font: 400 18px "Tiny5", monospace; color: #2a0d1b; }
+  .pad .a { background: var(--hot); grid-column: 6; grid-row: 1 / 3; }
+  .pad .b { background: var(--lilac); grid-column: 5; grid-row: 2 / 4; }
+  .backs { display: flex; flex-wrap: wrap; gap: 6px; }
+  .back { inline-size: 64px; block-size: 44px; border-radius: 6px; border: 2px solid transparent; background: center / cover; cursor: pointer; position: relative; padding: 0; overflow: hidden; }
+  .back[aria-pressed="true"] { border-color: var(--pink); }
+  .back span { position: absolute; inset: auto 0 0 0; font: 400 10px "Tiny5", monospace; background: rgba(0,0,0,.55); color: #fff; padding: 1px 3px; text-align: left; }
+  .upload { display: grid; place-items: center; background: #222025; border: 1px dashed #4a464e; color: var(--dim); font: 400 10px "Tiny5", monospace; }
+  .row { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; color: var(--dim); font-size: 12px; }
+  .row label { display: flex; align-items: center; gap: 8px; }
   input[type=range] { accent-color: var(--pink); }
-  .times { display: flex; gap: 6px; }
-  .times button { background: #222025; color: #f4eef1; border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; cursor: pointer; font: inherit; }
-  .times button[aria-pressed="true"] { border-color: var(--pink); color: var(--pink); }
   kbd { font: 11px ui-monospace, monospace; background: #222025; border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; }
-
-  @media (max-width: 900px) {
-    .console { grid-template-columns: 1fr 1fr; border-radius: 32px; }
-    .screen { grid-column: 1 / -1; order: -1; }
-    .pills { grid-column: 1 / -1; } .grille { display: none; }
-  }
+  @media (max-width: 640px) { .panel { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
 
-<div class="console">
+<main class="stage" id="stage" aria-label="Pixel-art glasses with questie showing through the right lens">
+  <div class="bg" id="bg"><canvas id="street" width="320" height="180" hidden></canvas></div>
+  <div class="headline"><b>questie</b><span>side quests for your glasses</span></div>
+  <div class="hud"><iframe id="app" src="index.html" title="questie running on the glasses display"></iframe></div>
+  <canvas id="glasses" width="144" height="144"></canvas>
+  <p class="note" id="note" hidden>back on the home screen exits the app</p>
+</main>
+
+<section class="panel">
   <div>
-    <div class="dpad">
-      <button class="up" data-key="ArrowUp" aria-label="Swipe up">▲</button>
-      <button class="left" data-key="ArrowLeft" aria-label="Swipe left">◀</button>
-      <span class="dpad mid" aria-hidden="true"></span>
-      <button class="right" data-key="ArrowRight" aria-label="Swipe right">▶</button>
-      <button class="down" data-key="ArrowDown" aria-label="Swipe down">▼</button>
-    </div>
-    <p class="label">swipe</p>
-  </div>
-
-  <div class="screen">
-    <div class="bezel">
-      <p class="bezel-top"><span class="led"></span>power<span class="brand">questie ♡</span></p>
-      <main class="stage" id="stage" aria-label="Simulated view through Meta Ray-Ban Display glasses">
-        <canvas id="street" width="320" height="180"></canvas>
-        <div class="hud"><iframe id="app" src="index.html" title="questie running on the glasses display"></iframe></div>
-        <canvas id="glasses" width="320" height="180"></canvas>
-        <p class="note" id="note" hidden>back on the home screen exits the app</p>
-      </main>
+    <h2>controls</h2>
+    <div class="pad">
+      <span></span><button data-key="ArrowUp" aria-label="Swipe up">▲</button><span></span><span></span>
+      <span></span><button class="a" data-key="Enter" aria-label="Tap">A</button>
+      <button data-key="ArrowLeft" aria-label="Swipe left">◀</button><span></span><button data-key="ArrowRight" aria-label="Swipe right">▶</button><span></span>
+      <button class="b" data-back aria-label="Back">B</button>
+      <span></span><button data-key="ArrowDown" aria-label="Swipe down">▼</button><span></span>
     </div>
   </div>
-
   <div>
-    <div class="ab">
-      <button class="a" data-key="Enter" aria-label="Tap">A</button><small class="la">tap</small>
-      <button class="b" data-back aria-label="Back">B</button><small class="lb">back</small>
-    </div>
+    <h2>background</h2>
+    <div class="backs" id="backs"></div>
   </div>
-
-  <div class="pills">
-    <button class="pill" id="selectBtn" type="button"><i></i>time</button>
-    <button class="pill" id="startBtn" type="button"><i></i>restart</button>
-  </div>
-  <div class="grille" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-</div>
-
-<details>
-  <summary>display settings</summary>
-  <div class="settings">
-    <span class="times" id="times"></span>
+  <div class="row">
     <label>size <input id="size" type="range" min="60" max="100" value="92"></label>
     <label>brightness <input id="bright" type="range" min="40" max="100" value="95"></label>
-    <label><input type="checkbox" id="walk" checked> walking</label>
     <label><input type="checkbox" id="bounds"> display edge</label>
-    <span>keyboard: <kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> swipe · <kbd>Enter</kbd> tap · <kbd>Esc</kbd> back</span>
+    <span>A = tap · B = back · or <kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> <kbd>Enter</kbd> <kbd>Esc</kbd></span>
   </div>
-</details>
+</section>
 
 <script>
-const W = 320, H = 180, GROUND = 140;
 const stage = document.getElementById("stage"), frame = document.getElementById("app");
-const store = { get(k, d) { try { return JSON.parse(localStorage.getItem("questieSim." + k)) ?? d; } catch { return d; } },
-                set(k, v) { try { localStorage.setItem("questieSim." + k, JSON.stringify(v)); } catch {} } };
+const store = { get(k, d) { try { return JSON.parse(localStorage.getItem("questieSim2." + k)) ?? d; } catch { return d; } },
+                set(k, v) { try { localStorage.setItem("questieSim2." + k, JSON.stringify(v)); } catch {} } };
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-// ---------- palettes (dusk is the default: the pink display pops best on a darker street) ----------
-const TIMES = {
-  morning: { sky: ["#8ec5f0", "#a6d1f2", "#c3def4", "#f4d9e8", "#ffeef3"], orb: "#fff6c8", far: "#b9c8e6",
-             bldg: ["#e2a5a0", "#d8b4c8", "#b8a6d6", "#f0c7a8"], trim: "#8a6b84", on: "#fff1c2", off: "#7d8fb5",
-             walk: "#cdbfcf", walkLine: "#b9aabb", street: "#7d7389", lane: "#f4eef1",
-             tree: "#5fae86", treeHi: "#7cc79c", trunk: "#7a5b5b", lamp: "#fff1c2", glow: 0, stars: false },
-  dusk:    { sky: ["#2c1f54", "#4b2a6e", "#7d3b7d", "#c25b80", "#f39a87"], orb: "#ffd1a1", far: "#3b2b63",
-             bldg: ["#6d4b7d", "#86506f", "#5b4a85", "#7a5a6e"], trim: "#2a1c3c", on: "#ffcf7a", off: "#3a2a52",
-             walk: "#58486b", walkLine: "#4a3b5c", street: "#2b2237", lane: "#8a7aa0",
-             tree: "#2f6b62", treeHi: "#3f8a74", trunk: "#3a2a3a", lamp: "#ffd890", glow: .18, stars: false },
-  night:   { sky: ["#0b0920", "#120f30", "#19143d", "#211a4a", "#2a2056"], orb: "#fff3d6", far: "#1c1638",
-             bldg: ["#2f2650", "#3a2a55", "#2a2a4f", "#352743"], trim: "#140f26", on: "#ffd27f", off: "#221a3a",
-             walk: "#2e2640", walkLine: "#251f36", street: "#15111f", lane: "#5b5070",
-             tree: "#1d3f3c", treeHi: "#275249", trunk: "#211a26", lamp: "#ffe2a0", glow: .26, stars: true },
+// ---------- pixel-art glasses, seen from behind (144×144 grid) ----------
+// Browline style like the reference: thick black acetate across the top, fading to a thin
+// silver rim along the bottom. The right lens is the one with the display.
+const G = 144;
+const LENS = { x: 36, y: 44, w: 76, h: 62 };            // main (display) lens
+const LEFT = { x: -46, y: 46, w: 62, h: 58 };           // partly off-frame on the left
+const inRound = (x, y, r, grow, rad) => {
+  const x0 = r.x - grow, y0 = r.y - grow, x1 = r.x + r.w + grow, y1 = r.y + r.h + grow;
+  if (x < x0 || x >= x1 || y < y0 || y >= y1) return false;
+  const R = rad + grow, cx = Math.min(Math.max(x, x0 + R), x1 - R - 1), cy = Math.min(Math.max(y, y0 + R), y1 - R - 1);
+  return (x - cx) ** 2 + (y - cy) ** 2 <= R * R;
 };
-let time = store.get("time", "dusk"); if (!TIMES[time]) time = "dusk";
-
-// ---------- pixel street (drawn at 320×180, scaled up with crisp pixels) ----------
-const sx = document.getElementById("street").getContext("2d");
-const hash = n => { let x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
-const BUILDINGS = []; let streetLen = 0;
-for (let i = 0; i < 18; i++) {
-  const w = 34 + Math.floor(hash(i) * 20), h = 58 + Math.floor(hash(i + 50) * 46);
-  BUILDINGS.push({ x: streetLen, w, h, c: i % 4, shop: hash(i + 9) < .35, seed: i }); streetLen += w + 2;
+function drawGlasses(shadow) {
+  const g = document.getElementById("glasses").getContext("2d"), img = g.createImageData(G, G), d = img.data;
+  const put = (x, y, c, a = 255) => { if (x < 0 || y < 0 || x >= G || y >= G) return; const i = (y * G + x) * 4;
+    d[i] = c[0]; d[i + 1] = c[1]; d[i + 2] = c[2]; d[i + 3] = a; };
+  const BLACK = [20, 19, 24], SHINE = [78, 74, 88], SILVER_DK = [138, 137, 148], SILVER = [205, 205, 214], ARM = [62, 60, 70], ARM_HI = [96, 93, 106];
+  const PINK = [255, 168, 207], PINK_DK = [255, 126, 184];
+  // soft floor shadow under the frame (studio backgrounds only)
+  if (shadow) for (let y = 108; y < 124; y++) for (let x = 0; x < G; x++) {
+    const e = ((x - 70) / 74) ** 2 + ((y - 115) / 7) ** 2; if (e < 1 && (x + y) % 2 === 0) put(x, y, [0, 0, 0], Math.round(70 * (1 - e)));
+  }
+  // temple arm: from the hinge block sweeping down to the bottom-right corner, widening toward us
+  const ax0 = 118, ay0 = 56, ax1 = 150, ay1 = 132;
+  for (let y = 40; y < G; y++) for (let x = 100; x < G; x++) {
+    const vx = ax1 - ax0, vy = ay1 - ay0, t = Math.max(0, Math.min(1, ((x - ax0) * vx + (y - ay0) * vy) / (vx * vx + vy * vy)));
+    const dist = Math.hypot(x - ax0 - t * vx, y - ay0 - t * vy), half = 3 + t * 4.5;
+    if (dist <= half) put(x, y, dist > half - 1.5 && (x - ax0) * vy - (y - ay0) * vx < 0 ? ARM_HI : ARM);
+  }
+  // hinge block with the display module, and a tiny pink heart on it
+  for (let y = 46; y < 66; y++) for (let x = 110; x < 124; x++) put(x, y, y < 49 ? ARM_HI : x > 121 ? [30, 29, 35] : ARM);
+  ["#.#", "###", ".#."].forEach((r, j) => [...r].forEach((c, i) => c === "#" && put(115 + i, 54 + j, PINK)));
+  // rims: thick black top half, thin dithered silver bottom half
+  const rim = (L, rad) => {
+    const mid = L.y + L.h * .48;
+    for (let y = L.y - 6; y < L.y + L.h + 4; y++) for (let x = L.x - 6; x < L.x + L.w + 6; x++) {
+      if (inRound(x, y, L, 0, rad)) continue;
+      const top = y < mid, t = top ? 5 : 2;
+      if (!inRound(x, y, L, t, rad)) continue;
+      if (top) put(x, y, !inRound(x, y - 1, L, t, rad) ? SHINE : BLACK);
+      else { const k = (y - mid) / (L.h * .55); put(x, y, (x + y) % 2 === 0 && k < .5 ? SILVER_DK : k < .25 ? SILVER_DK : SILVER); }
+    }
+  };
+  rim(LEFT, 12); rim(LENS, 12);
+  // bridge: a thick black arch joining the two lenses
+  for (let x = LEFT.x + LEFT.w; x < LENS.x; x++) {
+    const arch = Math.round(2 * Math.sin(Math.PI * (x - (LEFT.x + LEFT.w)) / (LENS.x - LEFT.x - LEFT.w)));
+    for (let y = 39 - arch; y < 46 - arch; y++) put(x, y, y === 39 - arch ? SHINE : BLACK);
+  }
+  // nose pads (pink, for cuteness) on little silver arms
+  const PAD = [".##.", "####", "####", "####", "####", ".##."];
+  for (const [px, dir] of [[LENS.x + 4, 1], [LEFT.x + LEFT.w - 8, -1]]) {
+    for (let i = 0; i < 4; i++) put(px + (dir > 0 ? -i : 3 + i), 52 + i, SILVER_DK);        // arm from rim to pad
+    PAD.forEach((r, j) => [...r].forEach((c, i) => c === "#" && put(px + i, 56 + j, i === (dir > 0 ? 1 : 2) ? PINK : PINK_DK)));
+  }
+  // two little glare streaks on the main lens
+  for (let i = 0; i < 9; i++) { put(LENS.x + 6 + i, LENS.y + 12 - i, [255, 255, 255], 70); put(LENS.x + 10 + i, LENS.y + 13 - i, [255, 255, 255], 45); }
+  g.putImageData(img, 0, 0);
 }
+
+// ---------- pixel street (reused from the earlier version, dusk and night) ----------
+const W = 320, H = 180, GROUND = 140;
+const TIMES = {
+  dusk:  { sky: ["#2c1f54", "#4b2a6e", "#7d3b7d", "#c25b80", "#f39a87"], orb: "#ffd1a1", far: "#3b2b63",
+           bldg: ["#6d4b7d", "#86506f", "#5b4a85", "#7a5a6e"], trim: "#2a1c3c", on: "#ffcf7a", off: "#3a2a52",
+           walk: "#58486b", walkLine: "#4a3b5c", street: "#2b2237", lane: "#8a7aa0", tree: "#2f6b62", treeHi: "#3f8a74", trunk: "#3a2a3a", lamp: "#ffd890", stars: false },
+  night: { sky: ["#0b0920", "#120f30", "#19143d", "#211a4a", "#2a2056"], orb: "#fff3d6", far: "#1c1638",
+           bldg: ["#2f2650", "#3a2a55", "#2a2a4f", "#352743"], trim: "#140f26", on: "#ffd27f", off: "#221a3a",
+           walk: "#2e2640", walkLine: "#251f36", street: "#15111f", lane: "#5b5070", tree: "#1d3f3c", treeHi: "#275249", trunk: "#211a26", lamp: "#ffe2a0", stars: true },
+};
+const street = document.getElementById("street"), sx = street.getContext("2d");
+const hash = n => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+const BUILDINGS = []; let streetLen = 0;
+for (let i = 0; i < 18; i++) { const w = 34 + Math.floor(hash(i) * 20), h = 58 + Math.floor(hash(i + 50) * 46);
+  BUILDINGS.push({ x: streetLen, w, h, c: i % 4, shop: hash(i + 9) < .35, seed: i }); streetLen += w + 2; }
 const px = (x, y, w, h, c) => { sx.fillStyle = c; sx.fillRect(Math.round(x), Math.round(y), w, h); };
 const wrap = (x, len) => ((x % len) + len) % len;
-
-function drawStreet(t) {
-  const P = TIMES[time];
-  // sky in stepped bands with a dithered seam between them
+function drawStreet(P, t) {
   const band = GROUND / P.sky.length;
   P.sky.forEach((c, i) => px(0, i * band, W, band + 1, c));
   for (let i = 1; i < P.sky.length; i++) for (let x = 0; x < W; x += 2) px(x + (i % 2), Math.round(i * band) - 1, 1, 1, P.sky[i]);
   if (P.stars) for (let i = 0; i < 40; i++) if ((t >> 3) % 7 !== i % 7) px(hash(i) * W, hash(i + 3) * 70, 1, 1, "#fff4fa");
-  // sun or moon
   for (let y = -7; y <= 7; y++) for (let x = -7; x <= 7; x++) if (x * x + y * y <= 49) px(252 + x, 30 + y, 1, 1, P.orb);
-  // far skyline
   const farOff = wrap(t * .15, 160);
-  for (let k = -1; k < 3; k++) for (let i = 0; i < 10; i++) {
-    const bx = k * 160 + i * 16 - farOff, bh = 22 + hash(i + 200) * 34;
-    px(bx, GROUND - 20 - bh, 15, bh + 20, P.far);
-  }
-  // brownstones and shops
+  for (let k = -1; k < 3; k++) for (let i = 0; i < 10; i++) { const bh = 22 + hash(i + 200) * 34; px(k * 160 + i * 16 - farOff, GROUND - 20 - bh, 15, bh + 20, P.far); }
   const bOff = wrap(t * .5, streetLen);
   for (const b of BUILDINGS) for (const rep of [0, streetLen]) {
     const x = b.x + rep - bOff; if (x > W || x + b.w < 0) continue;
     const top = GROUND - b.h;
-    px(x, top, b.w, b.h, P.bldg[b.c]);
-    px(x - 1, top - 2, b.w + 2, 3, P.trim);                                   // cornice
+    px(x, top, b.w, b.h, P.bldg[b.c]); px(x - 1, top - 2, b.w + 2, 3, P.trim);
     for (let wy = top + 7; wy < GROUND - 18; wy += 11) for (let wx = x + 5; wx < x + b.w - 6; wx += 9) {
-      const lit = hash(b.seed * 31 + wx * .7 + wy) < (time === "night" ? .6 : time === "dusk" ? .45 : .15);
+      const lit = hash(b.seed * 31 + wx * .7 + wy) < (P.stars ? .6 : .45);
       px(wx, wy, 5, 6, lit ? P.on : P.off); px(wx, wy + 6, 5, 1, P.trim);
     }
-    const doorX = x + Math.floor(b.w / 2) - 3;
-    px(doorX, GROUND - 11, 7, 11, P.trim);
-    if (b.shop) {                                                            // striped pink awning
-      for (let ax = 0; ax < b.w - 4; ax++) px(x + 2 + ax, GROUND - 17, 1, 4, ax % 4 < 2 ? "#ff9fc8" : "#fff4fa");
-      px(x + 3, GROUND - 15, b.w - 6, 1, "rgba(0,0,0,.2)");
-    } else { px(doorX - 2, GROUND - 2, 11, 2, P.trim); }                      // stoop
+    const doorX = x + Math.floor(b.w / 2) - 3; px(doorX, GROUND - 11, 7, 11, P.trim);
+    if (b.shop) for (let ax = 0; ax < b.w - 4; ax++) px(x + 2 + ax, GROUND - 17, 1, 4, ax % 4 < 2 ? "#ff9fc8" : "#fff4fa");
+    else px(doorX - 2, GROUND - 2, 11, 2, P.trim);
   }
-  // sidewalk, curb, street
   px(0, GROUND, W, 10, P.walk);
-  const near = wrap(t, 8);
-  for (let x = -near; x < W; x += 8) px(x, GROUND, 1, 10, P.walkLine);
-  px(0, GROUND + 10, W, 2, P.walkLine);
-  px(0, GROUND + 12, W, H - GROUND - 12, P.street);
-  const laneOff = wrap(t * 1.4, 24);
-  for (let x = -laneOff; x < W; x += 24) px(x, GROUND + 25, 12, 2, P.lane);
-  // trees and lamp posts
+  for (let x = -wrap(t, 8); x < W; x += 8) px(x, GROUND, 1, 10, P.walkLine);
+  px(0, GROUND + 10, W, 2, P.walkLine); px(0, GROUND + 12, W, H - GROUND - 12, P.street);
+  for (let x = -wrap(t * 1.4, 24); x < W; x += 24) px(x, GROUND + 25, 12, 2, P.lane);
   const tOff = wrap(t, 90);
   for (let x = -tOff; x < W + 90; x += 90) {
     px(x + 4, GROUND - 12, 2, 13, P.trunk);
     for (let y = -9; y <= 9; y++) for (let dx = -10; dx <= 10; dx++) if (dx * dx * .8 + y * y <= 81) px(x + 5 + dx, GROUND - 22 + y, 1, 1, (dx + y) % 5 === 0 ? P.treeHi : P.tree);
-    const lx = x + 50;
-    px(lx, GROUND - 30, 1, 30, P.trim); px(lx - 1, GROUND - 32, 3, 2, P.lamp);
-    if (P.glow) { sx.fillStyle = `rgba(255,210,140,${P.glow})`; sx.beginPath(); sx.arc(lx, GROUND - 31, 9, 0, 7); sx.fill(); }
+    px(x + 50, GROUND - 30, 1, 30, P.trim); px(x + 49, GROUND - 32, 3, 2, P.lamp);
   }
 }
 
-// ---------- chunky pixel glasses (drawn once per resize) ----------
-const LENS = [{ x: 24, y: 24, w: 126, h: 126 }, { x: 170, y: 24, w: 126, h: 126 }];   // left, right (display) lens
-const RIM = 6;
-function inRound(x, y, r, grow, radTop, radBot) {
-  const x0 = r.x - grow, y0 = r.y - grow, x1 = r.x + r.w + grow, y1 = r.y + r.h + grow;
-  if (x < x0 || x >= x1 || y < y0 || y >= y1) return false;
-  const rad = (y < (y0 + y1) / 2 ? radTop : radBot) + grow;
-  const cx = x < x0 + rad ? x0 + rad : x >= x1 - rad ? x1 - rad - 1 : x, cy = y < y0 + rad ? y0 + rad : y >= y1 - rad ? y1 - rad - 1 : y;
-  return (x - cx) ** 2 + (y - cy) ** 2 <= rad * rad;
+// ---------- backgrounds ----------
+// studio: flat product-shot greys (mid grey by default; on a pale backdrop the additive display
+// genuinely washes out, just like on the real glasses in bright light)
+const BACKS = [
+  { name: "studio", css: "radial-gradient(ellipse at 50% 35%, #9b98a3, #6a6773 70%, #55525d)", studio: true },
+  { name: "studio dark", css: "radial-gradient(ellipse at 50% 35%, #3a3740, #1d1b21 70%, #141217)", studio: true },
+  { name: "studio light", css: "radial-gradient(ellipse at 50% 35%, #f1f0f2, #dcdadf 70%, #cfcdd3)", studio: true, light: true },
+  { name: "street dusk", street: "dusk" }, { name: "street night", street: "night" },
+  { name: "park", photo: 17 }, { name: "city", photo: 57 }, { name: "forest", photo: 28 }, { name: "lake", photo: 128 },
+];
+const bg = document.getElementById("bg"), backsEl = document.getElementById("backs");
+let current = null, tick = 0;
+function applyBack(b, url) {
+  current = b;
+  street.hidden = !b.street;
+  bg.style.background = b.css || (url ? `center / cover no-repeat url("${url}")` : b.photo ? `center / cover no-repeat url(https://picsum.photos/id/${b.photo}/1200/1200)` : "#000");
+  stage.classList.toggle("light", !!b.light);
+  if (b.street) drawStreet(TIMES[b.street], tick);
+  drawGlasses(!!b.studio);
 }
-function drawGlasses() {
-  const g = document.getElementById("glasses").getContext("2d"), img = g.createImageData(W, H), d = img.data;
-  const put = (x, y, [r, gg, b, a]) => { const i = (y * W + x) * 4; d[i] = r; d[i + 1] = gg; d[i + 2] = b; d[i + 3] = a; };
-  const RIMC = [21, 16, 24, 255], HI = [70, 56, 80, 255], STITCH = [255, 168, 207, 255], VEIL = [18, 10, 30, 150], GLARE = [255, 244, 250, 60];
-  const lens = (x, y) => LENS.some(L => inRound(x, y, L, 0, 12, 20));
-  const rim = (x, y) => LENS.some(L => inRound(x, y, L, RIM, 12, 20))
-    || (x >= 146 && x < 174 && y >= 34 && y < 44)                         // bridge
-    || (y >= 30 && y < 37 && (x < 22 || x >= 298));                         // temples
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    if (lens(x, y)) {
-      const L = LENS[0];                                                    // two little glare streaks on the left lens
-      if (inRound(x, y, L, 0, 12, 20) && ((x - L.x) + (y - L.y) === 22 || (x - L.x) + (y - L.y) === 27) && y - L.y < 26) put(x, y, GLARE);
-      continue;
-    }
-    if (rim(x, y)) {
-      const stitch = LENS.some(L => inRound(x, y, L, 3, 12, 20) && !inRound(x, y, L, 2, 12, 20)) && (x + y) % 3 === 0;
-      const edge = !rim(x - 1, y - 1);
-      put(x, y, stitch ? STITCH : edge ? HI : RIMC);
-    } else put(x, y, VEIL);
-  }
-  // pink bows at the hinges
-  const BOW = ["##.##", "#.#.#", "##.##", ".#.#."];
-  for (const [bx, by] of [[12, 26], [303, 26]]) BOW.forEach((r, j) => [...r].forEach((c, i) => c === "#" && put(bx + i, by + j, STITCH)));
-  g.putImageData(img, 0, 0);
+function pick(i) {
+  backsEl.querySelectorAll(".back").forEach((el, j) => el.setAttribute("aria-pressed", String(j === i)));
+  applyBack(BACKS[i]); store.set("back", i);
 }
+BACKS.forEach((b, i) => {
+  const el = document.createElement("button");
+  el.className = "back"; el.type = "button"; el.innerHTML = `<span>${b.name}</span>`;
+  el.style.background = b.css || (b.street ? (b.street === "dusk" ? "linear-gradient(#4b2a6e, #c25b80 60%, #58486b 61%)" : "linear-gradient(#0b0920, #2a2056 60%, #2e2640 61%)")
+                                   : `center / cover url(https://picsum.photos/id/${b.photo}/140/100)`);
+  el.onclick = () => pick(i); backsEl.append(el);
+});
+// Your own photo stays on this computer: it's read locally, never uploaded.
+const up = document.createElement("label");
+up.className = "back upload"; up.innerHTML = `your photo<input type="file" accept="image/*" hidden>`;
+up.querySelector("input").onchange = e => { const f = e.target.files[0]; if (!f) return;
+  backsEl.querySelectorAll(".back").forEach(el => el.setAttribute("aria-pressed", "false")); up.setAttribute("aria-pressed", "true");
+  applyBack({ name: "photo" }, URL.createObjectURL(f)); };
+backsEl.append(up);
+pick(Math.min(store.get("back", 0), BACKS.length - 1));
+// the street gently scrolls, as if you're walking
+setInterval(() => { if (current?.street && !reduceMotion && !document.hidden) { tick++; drawStreet(TIMES[current.street], tick); } }, 1000 / 12);
 
-// ---------- place the app inside the right lens ----------
-const sizeEl = document.getElementById("size"), brightEl = document.getElementById("bright");
+// ---------- place the app in the main lens ----------
+const sizeEl = document.getElementById("size"), brightEl = document.getElementById("bright"), boundsEl = document.getElementById("bounds");
 function placeHud() {
-  const R = LENS[1], k = stage.clientWidth / W;
-  stage.style.setProperty("--hx", ((R.x + R.w / 2) / W * 100) + "%");
-  stage.style.setProperty("--hy", ((R.y + R.h / 2) / H * 100) + "%");
-  stage.style.setProperty("--hs", (R.h * k / 600) * (sizeEl.value / 100));
+  const k = stage.clientWidth / G;
+  stage.style.setProperty("--hx", ((LENS.x + LENS.w / 2) / G * 100) + "%");
+  stage.style.setProperty("--hy", ((LENS.y + LENS.h / 2) / G * 100) + "%");
+  stage.style.setProperty("--hs", (LENS.h * k / 600) * (sizeEl.value / 100));
   stage.style.setProperty("--b", brightEl.value / 100);
 }
 [sizeEl, brightEl].forEach(el => { el.value = store.get(el.id, el.value); el.oninput = () => { store.set(el.id, el.value); placeHud(); }; });
-new ResizeObserver(placeHud).observe(stage);
-
-// ---------- time of day ----------
-const timesEl = document.getElementById("times");
-function setTime(name) {
-  time = name; store.set("time", name);
-  timesEl.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.t === name)));
-  drawStreet(tick);
-}
-Object.keys(TIMES).forEach(name => { const b = document.createElement("button"); b.type = "button"; b.dataset.t = name; b.textContent = name; b.onclick = () => setTime(name); timesEl.append(b); });
-document.getElementById("selectBtn").onclick = () => { const k = Object.keys(TIMES); setTime(k[(k.indexOf(time) + 1) % k.length]); };
-document.getElementById("startBtn").onclick = () => frame.contentWindow.location.reload();
-
-// ---------- walking: the street scrolls in whole pixels at ~12 fps ----------
-const walkEl = document.getElementById("walk"), boundsEl = document.getElementById("bounds");
-walkEl.checked = store.get("walk", !reduceMotion); boundsEl.checked = store.get("bounds", false);
-stage.classList.toggle("bounds", boundsEl.checked);
-walkEl.onchange = () => store.set("walk", walkEl.checked);
+boundsEl.checked = store.get("bounds", false); stage.classList.toggle("bounds", boundsEl.checked);
 boundsEl.onchange = () => { stage.classList.toggle("bounds", boundsEl.checked); store.set("bounds", boundsEl.checked); };
-let tick = 0;
-setInterval(() => { if (walkEl.checked && !document.hidden) { tick++; drawStreet(tick); } }, 1000 / 12);
+new ResizeObserver(placeHud).observe(stage);
 
 // ---------- input: same events the glasses produce (arrow keys, Enter, history Back) ----------
 function press(key) {
@@ -312,9 +284,6 @@ addEventListener("keydown", e => {
   if (e.key.startsWith("Arrow") || e.key === "Enter") { e.preventDefault(); press(e.key); }
   else if (e.key === "Escape" || e.key === "Backspace") { e.preventDefault(); back(); }
 });
-
-drawGlasses();
-setTime(time);
 </script>
 </body>
 </html>
