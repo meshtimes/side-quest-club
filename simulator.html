@@ -27,7 +27,8 @@
   .hud iframe { inline-size: 100%; block-size: 100%; border: 0; background: #000; display: block; }
   .bounds .hud { outline: 3px dashed rgba(255,255,255,.5); }
   #glasses, #real { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; image-rendering: pixelated; pointer-events: none; }
-  #real[hidden], #glasses[hidden] { display: none; }
+  #real[hidden], #glasses[hidden], #sketch[hidden] { display: none; }
+  #sketch { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; pointer-events: none; }
   .note { position: absolute; left: 50%; bottom: 5%; transform: translateX(-50%); margin: 0; padding: 6px 12px;
           background: rgba(20,12,30,.85); border-radius: 6px; font: 400 13px "Tiny5", monospace; }
 
@@ -106,6 +107,18 @@
       <ellipse cx="14.4" cy="62" rx="1.9" ry="5.2"/>
     </g>
   </svg>
+  <svg id="sketch" viewBox="0 0 144 144" hidden aria-hidden="true">
+    <defs>
+      <!-- crayon: rough edges (displacement) and speckled gaps where the crayon skipped (grain mask) -->
+      <filter id="crayon" x="-5%" y="-5%" width="110%" height="110%">
+        <feTurbulence type="fractalNoise" baseFrequency="1.7" numOctaves="2" seed="4" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale=".45" xChannelSelector="R" yChannelSelector="G" result="rough"/>
+        <feColorMatrix in="noise" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -4 0 0 0 3.05" result="grain"/>
+        <feComposite in="rough" in2="grain" operator="in"/>
+      </filter>
+    </defs>
+    <g id="crayonLines" filter="url(#crayon)" fill="none" stroke-linecap="round" stroke-linejoin="round"></g>
+  </svg>
   <p class="note" id="note" hidden>back on the home screen exits the app</p>
 </main>
 
@@ -126,7 +139,7 @@
   </div>
   <div class="row">
     <span class="styles" id="styles">frame
-      <button type="button" data-style="pixel">pixel</button><button type="button" data-style="real">realistic</button></span>
+      <button type="button" data-style="pixel">pixel</button><button type="button" data-style="real">realistic</button><button type="button" data-style="sketch">sketch</button></span>
     <label>size <input id="size" type="range" min="60" max="100" value="92"></label>
     <label>brightness <input id="bright" type="range" min="40" max="100" value="95"></label>
     <label><input type="checkbox" id="bounds"> display edge</label>
@@ -254,9 +267,9 @@ function drawStreet(P, t) {
 // studio: flat product-shot greys (mid grey by default; on a pale backdrop the additive display
 // genuinely washes out, just like on the real glasses in bright light)
 const BACKS = [
-  { name: "studio", css: "radial-gradient(ellipse at 50% 35%, #9b98a3, #6a6773 70%, #55525d)", studio: true },
+  { name: "studio", css: "radial-gradient(ellipse at 50% 35%, #9b98a3, #6a6773 70%, #55525d)", studio: true, crayon: "#e0614c" },
   { name: "studio dark", css: "radial-gradient(ellipse at 50% 35%, #3a3740, #1d1b21 70%, #141217)", studio: true },
-  { name: "studio light", css: "radial-gradient(ellipse at 50% 35%, #f1f0f2, #dcdadf 70%, #cfcdd3)", studio: true, light: true },
+  { name: "studio light", css: "radial-gradient(ellipse at 50% 35%, #f1f0f2, #dcdadf 70%, #cfcdd3)", studio: true, light: true, crayon: "#d9604a" },
   { name: "street dusk", street: "dusk" }, { name: "street night", street: "night" },
   { name: "park", photo: 17 }, { name: "city", photo: 57 }, { name: "forest", photo: 28 }, { name: "lake", photo: 128 },
 ];
@@ -270,6 +283,7 @@ function applyBack(b, url) {
   if (b.street) drawStreet(TIMES[b.street], tick);
   drawGlasses(!!b.studio);
   document.getElementById("realShadow").style.display = b.studio ? "" : "none";
+  document.getElementById("crayonLines").setAttribute("stroke", b.crayon || "#ffb3cf");   // pink crayon on dark scenes
 }
 function pick(i) {
   backsEl.querySelectorAll(".back").forEach((el, j) => el.setAttribute("aria-pressed", String(j === i)));
@@ -293,11 +307,72 @@ pick(Math.min(store.get("back", 0), BACKS.length - 1));
 // the street gently scrolls, as if you're walking
 setInterval(() => { if (current?.street && !reduceMotion && !document.hidden) { tick++; drawStreet(TIMES[current.street], tick); } }, 1000 / 12);
 
-// ---------- frame style: pixel art or realistic ----------
+// ---------- sketch frame: hand-drawn crayon outlines, same geometry as the other two ----------
+// Each shape is a list of points; every redraw nudges them slightly (seeded) and smooths them into a
+// curve, so lines wobble like a hand-drawn cartoon. A faint second pass gives the doubled crayon look.
+const rnd = s => { const x = Math.sin(s * 91.7 + 13.1) * 43758.5453; return x - Math.floor(x); };
+function roundRectPts(x, y, w, h, r, from = 0, to = 1, step = 2.2) {
+  const segs = [], arc = (cx, cy, a0) => { for (let a = 0; a < 1; a += .25) segs.push([cx + r * Math.cos(a0 + a * Math.PI / 2), cy + r * Math.sin(a0 + a * Math.PI / 2)]); };
+  // clockwise from the middle of the left side
+  for (let yy = y + h / 2; yy > y + r; yy -= step) segs.push([x, yy]);
+  arc(x + r, y + r, Math.PI);
+  for (let xx = x + r; xx < x + w - r; xx += step) segs.push([xx, y]);
+  arc(x + w - r, y + r, -Math.PI / 2);
+  for (let yy = y + r; yy < y + h - r; yy += step) segs.push([x + w, yy]);
+  arc(x + w - r, y + h - r, 0);
+  for (let xx = x + w - r; xx > x + r; xx -= step) segs.push([xx, y + h]);
+  arc(x + r, y + h - r, Math.PI / 2);
+  for (let yy = y + h - r; yy > y + h / 2; yy -= step) segs.push([x, yy]);
+  return segs.slice(Math.floor(from * segs.length), Math.ceil(to * segs.length));
+}
+const line = (x0, y0, x1, y1, n = 8) => [...Array(n + 1)].map((_, i) => [x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n]);
+const curve = (x0, y0, cx, cy, x1, y1, n = 10) => [...Array(n + 1)].map((_, i) => { const t = i / n, u = 1 - t;
+  return [u * u * x0 + 2 * u * t * cx + t * t * x1, u * u * y0 + 2 * u * t * cy + t * t * y1]; });
+const oval = (cx, cy, rx, ry, n = 14) => [...Array(n + 2)].map((_, i) => [cx + rx * Math.cos(i / n * 2 * Math.PI), cy + ry * Math.sin(i / n * 2 * Math.PI)]);
+const SKETCH = [
+  { pts: roundRectPts(LENS.x, LENS.y, LENS.w, LENS.h, 12), close: true },                    // main lens
+  { pts: roundRectPts(LENS.x - 5, LENS.y - 5, LENS.w + 10, LENS.h + 10, 17, 0, .5) },       // its thick top band
+  { pts: roundRectPts(LEFT.x, LEFT.y, LEFT.w, LEFT.h, 12), close: true },                    // left lens
+  { pts: roundRectPts(LEFT.x - 5, LEFT.y - 5, LEFT.w + 10, LEFT.h + 10, 17, 0, .5) },
+  { pts: curve(16, 41, 26, 34, 36, 41) }, { pts: curve(16, 46, 26, 40, 36, 46) },            // bridge
+  { pts: line(40, 51, 38.4, 56.5, 3) }, { pts: oval(37.6, 62, 2, 5.2) },                    // nose pads
+  { pts: line(12, 51, 13.6, 56.5, 3) }, { pts: oval(14.4, 62, 2, 5.2) },
+  { pts: roundRectPts(110, 45, 14, 21, 3), close: true },                                    // hinge block
+  { pts: line(124, 53, 151, 130, 12) }, { pts: line(113, 64, 138, 142, 12) },                // arm
+  { pts: line(42, 52, 49, 45, 3) }, { pts: line(42, 58, 54, 46, 4) },                        // glare doodles
+];
+function smooth(pts) {   // Catmull-Rom through the points, as cubic curves
+  let d = `M${pts[0][0].toFixed(2)},${pts[0][1].toFixed(2)}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[Math.max(i - 1, 0)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(i + 2, pts.length - 1)];
+    d += ` C${(p1[0] + (p2[0] - p0[0]) / 6).toFixed(2)},${(p1[1] + (p2[1] - p0[1]) / 6).toFixed(2)} ${(p2[0] - (p3[0] - p1[0]) / 6).toFixed(2)},${(p2[1] - (p3[1] - p1[1]) / 6).toFixed(2)} ${p2[0].toFixed(2)},${p2[1].toFixed(2)}`;
+  }
+  return d;
+}
+function sketchPath(shape, seed, amp) {
+  let pts = shape.pts.map(([x, y], i) => [x + (rnd(seed + i * 1.7) - .5) * amp, y + (rnd(seed + i * 2.3 + 9) - .5) * amp]);
+  if (shape.close) pts = pts.concat(pts.slice(0, 3).map(([x, y]) => [x + .8, y - .5]));   // overshoot past the start, like a pen
+  return smooth(pts);
+}
+const crayonEl = document.getElementById("crayonLines");
+SKETCH.forEach(() => crayonEl.insertAdjacentHTML("beforeend", `<path stroke-width="1.35"/><path stroke-width=".55" opacity=".5"/>`));
+function drawSketch(frameNo) {
+  const paths = crayonEl.querySelectorAll("path");
+  SKETCH.forEach((shape, i) => {
+    paths[i * 2].setAttribute("d", sketchPath(shape, i * 37 + frameNo * 101, .7));
+    paths[i * 2 + 1].setAttribute("d", sketchPath(shape, i * 53 + frameNo * 211 + 5, 1.3));   // faint second pass
+  });
+}
+let boil = 0; drawSketch(0);
+// line boil: cycle three slightly different drawings, like hand-drawn animation
+setInterval(() => { if (!reduceMotion && !document.hidden && !document.getElementById("sketch").hasAttribute("hidden")) drawSketch(++boil % 3); }, 260);
+
+// ---------- frame style: pixel art, realistic or sketch ----------
 function setStyle(style) {
   // toggleAttribute, not .hidden: the realistic frame is an SVG, which has no .hidden property
   document.getElementById("glasses").toggleAttribute("hidden", style !== "pixel");
   document.getElementById("real").toggleAttribute("hidden", style !== "real");
+  document.getElementById("sketch").toggleAttribute("hidden", style !== "sketch");
   document.querySelectorAll("[data-style]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.style === style)));
   store.set("style", style);
 }
