@@ -301,7 +301,7 @@ function sketchPath(shape, seed, amp) {
   return smooth(pts);
 }
 const crayonEl = document.getElementById("crayonLines");
-SKETCH.forEach(() => crayonEl.insertAdjacentHTML("beforeend", `<path stroke-width="1.35"/><path stroke-width=".55" opacity=".5"/>`));
+SKETCH.forEach(() => crayonEl.insertAdjacentHTML("beforeend", `<path stroke-width=".85"/><path stroke-width=".35" opacity=".5"/>`));
 function drawSketch(frameNo) {
   const paths = crayonEl.querySelectorAll("path");
   SKETCH.forEach((shape, i) => {
