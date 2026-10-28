@@ -16,10 +16,6 @@
   .bg { position: absolute; inset: 0; background: center / cover no-repeat; }
   .bg canvas { inline-size: 100%; block-size: 100%; object-fit: cover; image-rendering: pixelated; display: block; }
   .bg canvas[hidden] { display: none; }
-  .headline { position: absolute; inset: 4% 0 auto; text-align: center; pointer-events: none; }
-  .headline b { display: block; font: 400 clamp(28px, 7vw, 56px) "Tiny5", monospace; color: var(--pink); letter-spacing: 2px; line-height: 1; }
-  .headline span { font: 400 clamp(12px, 2.4vw, 18px) "Tiny5", monospace; color: rgba(255,255,255,.75); letter-spacing: 1px; }
-  .light .headline span { color: rgba(40,30,45,.7); }
   /* The display is additive: black adds no light (see-through), colours glow on top of whatever is behind. */
   .hud { position: absolute; left: var(--hx); top: var(--hy); inline-size: 600px; block-size: 600px;
          transform: translate(-50%, -50%) scale(var(--hs, .5)); transform-origin: center;
@@ -61,7 +57,6 @@
 
 <main class="stage" id="stage" aria-label="Ray-Ban Meta style glasses with questie showing through the right lens">
   <div class="bg" id="bg"><canvas id="street" width="320" height="180" hidden></canvas></div>
-  <div class="headline"><b>questie</b><span>side quests for your glasses</span></div>
   <div class="hud"><iframe id="app" src="index.html" title="questie running on the glasses display"></iframe></div>
   <canvas id="glasses" width="160" height="100"></canvas>
   <svg id="real" viewBox="0 0 160 100" hidden aria-hidden="true">
